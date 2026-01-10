@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react'; // Added useMemo for efficiency
+import React, { useState, useMemo } from 'react';
 import { motion, useMotionTemplate, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
-import { Award, Bot, Brain, Layers, Settings, ExternalLink, CodeSquare, FunctionSquare, Package, ChartBarDecreasing, Terminal, Cpu } from 'lucide-react';
+import { Bot, Brain, Layers, CodeSquare, FunctionSquare, Package, ChartBarDecreasing, Terminal, Cpu } from 'lucide-react';
 
 // --- 1. DATA: CERTIFICATES ---
+// Updated paths to match your GitHub public folder structure
 const certificates = [
   {
     id: 'python',
@@ -10,7 +11,7 @@ const certificates = [
     issuer: 'Udemy',
     category: 'Software & Web Technologies',
     date: 'Dec 2024',
-    image: 'public/certifications/python.webp', 
+    image: '/certifications/python.webp', 
     link: 'https://udemy-certificate.s3.amazonaws.com/image/UC-1b9a9969-a0be-4e09-84c8-a2ae38425fdc.jpg',
     color: 'from-orange-400 to-yellow-600',
     icon: CodeSquare
@@ -21,7 +22,7 @@ const certificates = [
     issuer: 'Udemy',
     category: 'Artificial Intelligence',
     date: 'Sep 2025',
-    image: 'public/certifications/AIMYTHS.webp',
+    image: '/certifications/AIMYTHS.webp',
     link: 'https://www.udemy.com/certificate/UC-21804c5c-8ab6-46de-96f0-2ee49edb3205/',
     color: 'from-blue-400 to-cyan-500',
     icon: FunctionSquare
@@ -32,7 +33,7 @@ const certificates = [
     issuer: 'Udemy',
     category: 'Software & Web Technologies',
     date: 'Oct 2025',
-    image: 'public/certifications/HTML.webp',
+    image: '/certifications/HTML.webp',
     link: 'https://www.udemy.com/certificate/UC-1b400912-0a4a-4b17-8a47-6a98ced8e484/',
     color: 'from-blue-600 to-indigo-600',
     icon: Package
@@ -43,7 +44,7 @@ const certificates = [
     issuer: 'Udemy',
     category: 'Artificial Intelligence',
     date: 'Dec 2024',
-    image: 'public/certifications/AIART.webp',
+    image: '/certifications/AIART.webp',
     link: 'https://www.udemy.com/certificate/UC-21804c5c-8ab6-46de-96f0-2ee49edb3205/',
     color: 'from-orange-500 to-red-600',
     icon: Terminal
@@ -54,7 +55,7 @@ const certificates = [
     issuer: 'Mathworks',
     category: 'Robotics & Simulation',
     date: 'Dec 2025',
-    image: 'public/certifications/matlab.webp',
+    image: '/certifications/matlab.webp',
     link: 'https://matlabacademy.mathworks.com/progress/share/certificate.html?id=9fe098f4-d0d0-464f-bded-a3e9e4bbfac8&',
     color: 'from-green-400 to-emerald-600',
     icon: ChartBarDecreasing
@@ -160,12 +161,9 @@ export function Certifications() {
   const [hoveredSkill, setHoveredSkill] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState('All');
 
-  // --- NEW SORTING AND FILTERING LOGIC ---
   const sortedFilteredCerts = useMemo(() => {
     return [...certificates]
-      // Sort: Newest to Oldest
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      // Filter based on active tab
       .filter(c => activeFilter === 'All' || c.category === activeFilter);
   }, [activeFilter]);
 
@@ -186,21 +184,18 @@ export function Certifications() {
           <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight">Verified <span className="bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent">Expertise</span></h1>
         </div>
 
-        {/* Filter Tabs */}
         <div className="flex flex-wrap justify-center gap-4 mb-16">
           {filterCategories.map(cat => (
             <button key={cat} onClick={() => setActiveFilter(cat)} className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${activeFilter === cat ? 'bg-white text-black border-white' : 'bg-white/5 text-gray-400 border-white/10 hover:text-white'}`}>{cat}</button>
           ))}
         </div>
 
-        {/* Certs Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-32">
           <AnimatePresence mode="popLayout">
             {sortedFilteredCerts.map(cert => <HoloCard key={cert.id} cert={cert} />)}
           </AnimatePresence>
         </div>
 
-        {/* Skills Track */}
         <div className="grid lg:grid-cols-2 gap-12">
           <div className="space-y-8">
             {engineeringTrack.map((cat, i) => <InteractiveSkillCard key={i} category={cat} hoveredSkill={hoveredSkill} setHoveredSkill={setHoveredSkill} />)}
