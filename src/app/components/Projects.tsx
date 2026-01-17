@@ -1,317 +1,260 @@
-import React, { useState, useRef } from 'react';
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { X, Github, ExternalLink, ArrowUpRight, Layers, Cpu, Code2, Terminal } from 'lucide-react';
+import React, { useRef, useState, useMemo, Suspense, useEffect } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Image, Text, useScroll, ScrollControls, Environment, Stars, Sparkles, Trail, useGLTF } from '@react-three/drei';
+import * as THREE from 'three';
+import { Terminal, MousePointer2, ChevronUp, Rocket, Eye, EyeOff, X, Github, ExternalLink, Tag, Layers } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// --- DATA: Your Projects ---
-const projects = [
-  {
-    id: 1,
-    title: 'Amazon Prime Clone',
-    category: 'Software',
-    tag: 'Frontend Engineering',
-    image: 'https://th.bing.com/th/id/OIP.rnGvCcBXugH-POgrt9AIYQHaDs?w=302&h=174&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-    description: 'A pixel-perfect replication of the Prime Video interface with mock authentication and dynamic carousels.',
-    tech: ['React', 'Firebase', 'Tailwind'],
-    links: { github: 'https://github.com/paneendrakumar0/primeloginclone', demo: 'https://paneendrakumar0.github.io/primeloginclone/' },
-    colSpan: 'md:col-span-2', // Wide card
-  },
-  {
-    id: 2,
-    title: 'Autonomous Delivery Bot',
-    category: 'Hardware',
-    tag: 'Robotics & AI',
-    image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?q=80&w=2070&auto=format&fit=crop',
-    description: 'ROS-2 based robot utilizing LIDAR for SLAM indoor navigation and dynamic obstacle avoidance.',
-    tech: ['ROS 2', 'Raspberry Pi', 'LIDAR', 'Python'],
-    links: { github: '#', demo: '#' },
-    colSpan: 'md:col-span-1', // Standard card
-  },
-  {
-    id: 3,
-    title: 'Kanban Board',
-    category: 'Software',
-    tag: 'Productivity Tool',
-    image: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?q=80&w=1939&auto=format&fit=crop',
-    description: 'Drag-and-drop task management tool inspired by Trello. Features local persistence and smooth physics.',
-    tech: ['HTML5 D&D', 'JavaScript', 'CSS Grid'],
-    links: { github: 'https://github.com/paneendrakumar0/Kamban-board', demo: 'https://paneendrakumar0.github.io/Kamban-board/' },
-    colSpan: 'md:col-span-1',
-  },
-  {
-    id: 4,
-    title: 'Gesture Controlled Bot',
-    category: 'Hardware',
-    tag: 'Hrdware Interface',
-    image: 'https://images.unsplash.com/photo-1508614589041-895b88991e3e?q=80&w=2070&auto=format&fit=crop',
-    description: 'A4 wheeled bot piloted by hand movements. Flex Sensors tracks changes and send it to the bot.',
-    tech: ['Arduino', 'OpenCV', 'Python', 'UDP'],
-    links: { github: '#', demo: '#' },
-    colSpan: 'md:col-span-2',
-  },
-  {
-    id: 5,
-    title: 'Smart Waste Bin',
-    category: 'Hardware',
-    tag: 'IoT System',
-    image: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=2070&auto=format&fit=crop',
-    description: 'AI-driven segregation using TensorFlow Lite on ESP32 to classify and sort waste automatically.',
-    tech: ['ESP32', 'TinyML', 'C++', 'Servos'],
-    links: { github: '#', demo: '#' },
-    colSpan: 'md:col-span-1',
-  },
-  {
-    id: 6,
-    title: 'Color Palette Gen',
-    category: 'Software',
-    tag: 'Design Tool',
-    image: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop',
-    description: 'Harmonious palette generator using color theory mathematics. Instant HEX/RGB conversion.',
-    tech: ['Vanilla JS', 'Math', 'CSS Variables'],
-    links: { github: 'https://github.com/paneendrakumar0/paneendrakumar.colorpalette.io', demo: 'https://paneendrakumar0.github.io/paneendrakumar.colorpalette.io/' },
-    colSpan: 'md:col-span-1',
-  },
+// --- TYPES & DATA ---
+export interface Project {
+  id: number;
+  title: string;
+  category: 'Software' | 'Hardware';
+  tech: string[];
+  image: string;
+  description: string;
+  fullDescription: string;
+  stats: { label: string; value: string }[];
+  github: string;
+  demo: string;
+  color: string;
+}
+
+const projects: Project[] = [
+  { id: 1, title: 'Autonomous Delivery Bot', category: 'Hardware', tech: ['ROS 2', 'Lidar', 'Python', 'Raspberry Pi'], image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?q=80&w=1000&auto=format&fit=crop', description: 'ROS-2 based indoor navigation robot.', fullDescription: 'This project represents a deep dive into hardware architecture. It overcomes significant challenges in latency and state management. The bot uses SLAM to navigate autonomously.', stats: [{ label: 'Ongoing', value: '100%' }, { label: 'Year', value: '2026' }], github: '#', demo: '#', color: '#fbbf24' },
+  { id: 2, title: 'Hybrid Racing Controller', category: 'Hardware', tech: ['Arduino', 'Potentiometer', 'OpenCV', 'Python'], image: 'https://images.unsplash.com/photo-1593118247619-e2d6f056869e?q=80&w=1000&auto=format&fit=crop', description: 'Physical Wheel + AI Gestures.', fullDescription: 'A unique hybrid game controller combining hardware precision with CV gesture tracking.', stats: [{ label: 'Input Lag', value: '<20ms' }, { label: 'Year', value: '2026' }], github: 'https://github.com/paneendrakumar0/Hybrid-Racing-Sim', demo: '#', color: '#ef4444' },
+  { id: 3, title: 'Robotic Hand Sim', category: 'Software', tech: ['ROS 2', 'Rviz2', 'OpenCV', 'URDF'], image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=1000&auto=format&fit=crop', description: 'Vision-based Teleoperation.', fullDescription: 'A digital twin simulation of a robotic hand in Rviz2 using MediaPipe for hand tracking.', stats: [{ label: 'Joints', value: '21' }, { label: 'Year', value: '2026' }], github: 'https://github.com/paneendrakumar0/Robotic-Hand-Simulation-in-ROS2', demo: '#', color: '#8b5cf6' },
+  { id: 4, title: 'Gesture Control Rover', category: 'Hardware', tech: ['OpenCV', 'Arduino', 'Python'], image: 'https://images.unsplash.com/photo-1555255707-c07966088b7b?q=80&w=1000&auto=format&fit=crop', description: 'Hand-tracking rover interface.', fullDescription: 'A 4-wheeled rover piloted purely by hand gestures transmitted via UDP.', stats: [{ label: 'Latency', value: '<50ms' }, { label: 'Year', value: '2025' }], github: '#', demo: '#', color: '#a78bfa' },
+  { id: 5, title: 'Amazon Prime Clone', category: 'Software', tech: ['React', 'Firebase', 'Tailwind'], image: 'https://unsplash.com/photos/a-phone-with-the-amazon-prime-logo-on-it-MZJzaEcUkCI&fit=crop', description: 'Pixel-perfect replica.', fullDescription: 'A responsive web application replicating core Prime Video functionality.', stats: [{ label: 'Completion', value: '100%' }, { label: 'Year', value: '2025' }], github: 'https://github.com/paneendrakumar0', demo: '#', color: '#22d3ee' },
+  { id: 6, title: 'Waste AI Sorter', category: 'Hardware', tech: ['TensorFlow Lite', 'ESP32', 'Servos'], image: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1000&auto=format&fit=crop', description: 'IoT Bio/Non-Bio classification.', fullDescription: 'An intelligent waste bin using ESP32-CAM and TensorFlow Lite.', stats: [{ label: 'Accuracy', value: '94%' }, { label: 'Year', value: '2024' }], github: '#', demo: '#', color: '#f472b6' },
+  { id: 7, title: 'Kanban Board', category: 'Software', tech: ['React', 'Drag & Drop API'], image: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?q=80&w=1939&auto=format&fit=crop', description: 'Productivity tool.', fullDescription: 'A Trello-style task management app with fluid drag-and-drop.', stats: [{ label: 'Users', value: 'Active' }, { label: 'Year', value: '2025' }], github: '#', demo: '#', color: '#34d399' },
+  { id: 8, title: 'Color Palette Gen', category: 'Software', tech: ['Algorithms', 'JavaScript'], image: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1000&auto=format&fit=crop', description: 'Algorithmic color tool.', fullDescription: 'Generates harmonious color palettes based on math.', stats: [{ label: 'Colors', value: 'Infinite' }, { label: 'Year', value: '2024' }], github: '#', demo: '#', color: '#60a5fa' }
 ];
 
-export function Projects() {
-  const [filter, setFilter] = useState('All');
-  const [selectedId, setSelectedId] = useState(null);
+function ProjectModal({ project, onClose }: { project: Project | null, onClose: () => void }) {
+  useEffect(() => {
+    if (project) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = 'unset';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [project]);
 
-  const filteredProjects = projects.filter(p => filter === 'All' || p.category === filter);
+  if (!project) return null;
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white py-24 px-6 relative overflow-hidden">
-      
-      {/* Background Texture (Subtle Noise) */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
-
-      <div className="max-w-7xl mx-auto relative z-10">
-        
-        {/* --- HEADER --- */}
-        <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-8">
-            <div>
-                <h2 className="text-sm font-mono text-cyan-400 mb-4 tracking-wider uppercase flex items-center gap-2">
-                    <Terminal className="w-4 h-4" /> System.Projects
-                </h2>
-                <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
-                    Selected <span className="text-gray-500">Works</span>
-                </h1>
+    <AnimatePresence>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-black/80 backdrop-blur-xl" onClick={onClose}>
+        <motion.div layoutId={`project-${project.id}`} initial={{ scale: 0.9, y: 30, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.9, y: 30, opacity: 0 }} className="relative bg-[#050505] border border-white/10 rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+          <button onClick={onClose} className="absolute top-4 right-4 z-50 p-2 rounded-full bg-black/50 border border-white/10 hover:bg-white/20 transition-all text-white group"><X className="w-6 h-6 group-hover:rotate-90 transition-transform" /></button>
+          <div className="relative h-48 md:h-96 w-full shrink-0">
+            <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent z-10" />
+            <img src={project.image} alt={project.title} className="w-full h-full object-cover opacity-80" />
+            <div className="absolute bottom-4 left-4 md:bottom-8 md:left-8 z-20">
+              <span className={`inline-block px-4 py-1.5 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-wider border backdrop-blur-md mb-2 md:mb-4 ${project.category === 'Software' ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-amber-500/20 border-amber-500/50 text-amber-400'}`}>{project.category}</span>
+              <h2 className="text-2xl md:text-5xl font-bold text-white tracking-tight">{project.title}</h2>
             </div>
-
-            {/* Glass Filter Tabs */}
-            <div className="p-1 bg-white/5 border border-white/10 rounded-full backdrop-blur-md flex">
-                {['All', 'Software', 'Hardware'].map((tab) => (
-                    <button
-                        key={tab}
-                        onClick={() => setFilter(tab)}
-                        className={`relative px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                            filter === tab ? 'text-black' : 'text-gray-400 hover:text-white'
-                        }`}
-                    >
-                        {filter === tab && (
-                            <motion.div 
-                                layoutId="active-pill"
-                                className="absolute inset-0 bg-white rounded-full"
-                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            />
-                        )}
-                        <span className="relative z-10">{tab}</span>
-                    </button>
-                ))}
+          </div>
+          <div className="p-6 md:p-10 overflow-y-auto custom-scrollbar">
+            <div className="flex flex-col lg:flex-row gap-8 md:gap-12">
+              <div className="flex-1 space-y-6">
+                <div><h3 className="text-sm font-mono text-gray-500 uppercase tracking-widest mb-4">Overview</h3><p className="text-gray-300 text-base md:text-lg leading-relaxed">{project.fullDescription}</p></div>
+                <div className="flex flex-wrap gap-4 pt-2">
+                  <a href={project.github} target="_blank" rel="noreferrer" className="flex-1 md:flex-none flex items-center justify-center gap-3 px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-white font-semibold hover:bg-white/10 transition-all"><Github className="w-5 h-5" /> Code</a>
+                  <a href={project.demo} target="_blank" rel="noreferrer" className="flex-1 md:flex-none flex items-center justify-center gap-3 px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl text-white font-bold shadow-lg shadow-cyan-500/20 hover:scale-[1.02] transition-all"><ExternalLink className="w-5 h-5" /> Demo</a>
+                </div>
+              </div>
+              <div className="w-full lg:w-80 space-y-6">
+                <div className="p-4 bg-white/5 rounded-2xl border border-white/5"><h3 className="text-xs font-mono text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2"><Tag className="w-4 h-4" /> Tech</h3><div className="flex flex-wrap gap-2">{project.tech.map(t => (<span key={t} className="px-2 py-1 bg-black/40 border border-white/10 rounded-lg text-[10px] text-gray-300 font-mono">{t}</span>))}</div></div>
+                <div className="p-4 bg-white/5 rounded-2xl border border-white/5"><h3 className="text-xs font-mono text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2"><Layers className="w-4 h-4" /> Stats</h3><div className="grid grid-cols-2 gap-4">{project.stats.map((stat, i) => (<div key={i}><div className="text-xl font-bold text-white">{stat.value}</div><div className="text-[10px] uppercase tracking-wider text-gray-500">{stat.label}</div></div>))}</div></div>
+              </div>
             </div>
-        </div>
-
-        {/* --- BENTO GRID --- */}
-        <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <AnimatePresence mode='popLayout'>
-                {filteredProjects.map((project) => (
-                    <TiltCard 
-                        key={project.id} 
-                        project={project} 
-                        onClick={() => setSelectedId(project.id)} 
-                    />
-                ))}
-            </AnimatePresence>
+          </div>
         </motion.div>
-
-        {/* --- EXPANDED OVERLAY (MODAL) --- */}
-        <AnimatePresence>
-            {selectedId && (
-                <ExpandedCard 
-                    id={selectedId} 
-                    onClose={() => setSelectedId(null)} 
-                />
-            )}
-        </AnimatePresence>
-
-      </div>
-    </div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
 
-// --- COMPONENT: 3D TILT CARD ---
-function TiltCard({ project, onClick }) {
-    const x = useMotionValue(0);
-    const y = useMotionValue(0);
-    const rotateX = useTransform(y, [-100, 100], [2, -2]); // Subtle tilt
-    const rotateY = useTransform(x, [-100, 100], [-2, 2]);
+function RealSpaceship({ mode }: { mode: string }) {
+  const group = useRef<THREE.Group>(null);
+  const engineRef = useRef<THREE.PointLight>(null);
+  const { scene } = useGLTF('/spaceship.glb');
+  const isMobile = window.innerWidth < 768;
 
-    function handleMouseMove(event) {
-        const rect = event.currentTarget.getBoundingClientRect();
-        x.set(event.clientX - rect.left - rect.width / 2);
-        y.set(event.clientY - rect.top - rect.height / 2);
+  useFrame((state) => {
+    if (!group.current) return;
+    const t = state.clock.elapsedTime;
+    const mouseX = state.pointer.x;
+    const mouseY = state.pointer.y;
+
+    if (mode === 'fly') {
+      group.current.rotation.z = THREE.MathUtils.lerp(group.current.rotation.z, -mouseX * 1.2, 0.1);
+      group.current.rotation.x = THREE.MathUtils.lerp(group.current.rotation.x, 0.2 - mouseY * 0.8, 0.1);
+      group.current.position.y = (isMobile ? -1 : -2) + Math.sin(t * 60) * 0.01;
+    } else {
+      group.current.position.y = -2 + Math.sin(t * 1.5) * 0.08;
+      group.current.rotation.z = Math.sin(t * 0.8) * 0.03;
+      group.current.rotation.x = 0.1; 
     }
 
-    return (
-        <motion.div
-            layoutId={`card-container-${project.id}`}
-            className={`group relative rounded-3xl cursor-pointer ${project.colSpan} h-[340px] perspective-1000`}
-            onMouseMove={handleMouseMove}
-            onMouseLeave={() => { x.set(0); y.set(0); }}
-            onClick={onClick}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-        >
-            <motion.div 
-                style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-                className="w-full h-full relative overflow-hidden rounded-3xl bg-gray-900 border border-white/10 hover:border-white/20 transition-colors shadow-2xl"
-            >
-                {/* Background Image with Zoom Effect */}
-                <div className="absolute inset-0">
-                    <motion.img 
-                        layoutId={`card-image-${project.id}`}
-                        src={project.image} 
-                        alt={project.title}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-60 group-hover:opacity-50"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-                </div>
+    if (engineRef.current) {
+      const targetColor = mode === 'fly' ? '#ff5500' : '#00aaff';
+      engineRef.current.color.lerp(new THREE.Color(targetColor), 0.1);
+      engineRef.current.intensity = THREE.MathUtils.lerp(engineRef.current.intensity, (mode === 'fly' ? 20 : 3) + Math.sin(t * 40) * 5, 0.2);
+    }
+  });
 
-                {/* Content */}
-                <div className="absolute inset-0 p-8 flex flex-col justify-between">
-                    <div className="flex justify-between items-start">
-                        <span className="px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-mono text-white border border-white/10">
-                            {project.category}
-                        </span>
-                        <div className="p-2 bg-white/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                            <ArrowUpRight className="w-5 h-5 text-white" />
-                        </div>
-                    </div>
-
-                    <div>
-                        <motion.h3 layoutId={`card-title-${project.id}`} className="text-2xl font-bold text-white mb-2">
-                            {project.title}
-                        </motion.h3>
-                        <p className="text-gray-400 text-sm line-clamp-2">
-                            {project.description}
-                        </p>
-                    </div>
-                </div>
-            </motion.div>
-        </motion.div>
-    );
+  return (
+    <group ref={group} position={[0, -2, -3]}>
+      <group rotation={[0, Math.PI, 0]} scale={isMobile ? [0.1, 0.1, 0.1] : [0.15, 0.15, 0.15]}> 
+        <primitive object={scene} />
+      </group>
+      <pointLight ref={engineRef} position={[0, 1, 4]} distance={25} decay={2} />
+      {mode === 'fly' && (
+        <group position={[0, 0.5, 3.5]}>
+          <Sparkles count={50} scale={[0.5, 0.5, 2]} size={20} speed={10} color="#ff4400" />
+        </group>
+      )}
+    </group>
+  );
 }
 
-// --- COMPONENT: EXPANDED FULLSCREEN CARD ---
-function ExpandedCard({ id, onClose }) {
-    const project = projects.find(p => p.id === id);
+function ProjectCard({ project, hovered, setHover, onOpen, scale = 1 }: any) {
+  const mesh = useRef<THREE.Group>(null);
+  useFrame((state, delta) => {
+    if (!mesh.current) return;
+    const targetScale = scale * (hovered === project.id ? 1.1 : 1); 
+    mesh.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), delta * 8);
+    mesh.current.lookAt(state.camera.position);
+  });
 
-    return (
-        <div className="fixed inset-0 z-50 grid place-items-center p-4 md:p-8">
-            <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }}
-                onClick={onClose}
-                className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            />
-            
-            <motion.div 
-                layoutId={`card-container-${id}`}
-                className="relative w-full max-w-5xl h-full max-h-[800px] bg-[#0a0a0a] rounded-3xl overflow-hidden border border-white/10 flex flex-col shadow-2xl"
-            >
-                {/* ... (Header image section same as before) ... */}
-                <button onClick={onClose} className="absolute top-6 right-6 z-20 p-2 bg-black/50 rounded-full hover:bg-white/20 transition-colors">
-                    <X className="w-6 h-6 text-white" />
-                </button>
+  return (
+    <group ref={mesh} onClick={(e) => { e.stopPropagation(); onOpen(project); }} onPointerOver={() => setHover(project.id)} onPointerOut={() => setHover(null)}>
+      <mesh position={[0, 0, -0.05]}><planeGeometry args={[12, 7.5]} /><meshBasicMaterial color="#000" transparent opacity={0.8} /></mesh>
+      <mesh position={[0, 0, -0.01]}><planeGeometry args={[11.8, 7.3]} /><meshBasicMaterial color={project.color} wireframe /></mesh>
+      <Image url={project.image} scale={[11.6, 7.1]} transparent opacity={hovered === project.id ? 1 : 0.7} toneMapped={false} />
+      <group position={[0, -4.5, 0]}>
+        <Text fontSize={0.8} color="white" anchorX="center" anchorY="top" outlineWidth={0.04} outlineColor="black">{project.title}</Text>
+      </group>
+    </group>
+  );
+}
 
-                <div className="relative h-1/2 w-full">
-                      <motion.img 
-                        layoutId={`card-image-${id}`}
-                        src={project.image} 
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent" />
-                      
-                      <div className="absolute bottom-8 left-8 md:left-12">
-                        <motion.h2 layoutId={`card-title-${id}`} className="text-4xl md:text-6xl font-bold text-white mb-2">
-                            {project.title}
-                        </motion.h2>
-                        <span className="text-cyan-400 font-mono text-lg">{project.tag}</span>
-                      </div>
-                </div>
+function AnimatedProject({ project, targetPos, hovered, setHover, onOpen, scale }: any) {
+  const group = useRef<THREE.Group>(null);
+  useFrame((state, delta) => {
+    if(!group.current) return;
+    group.current.position.lerp(new THREE.Vector3(...targetPos), delta * 2.5);
+  });
+  return <group ref={group}><ProjectCard project={project} hovered={hovered} setHover={setHover} onOpen={onOpen} scale={scale} /></group>;
+}
 
-                <div className="p-8 md:p-12 flex flex-col md:flex-row gap-12 h-1/2 overflow-y-auto">
-                    <div className="flex-1">
-                        <h3 className="text-xl font-bold text-white mb-4">About the Project</h3>
-                        <p className="text-gray-400 leading-relaxed text-lg mb-8">
-                            {project.description} 
-                            <br/><br/>
-                            This project represents a deep dive into {project.category.toLowerCase()} architecture. 
-                            It overcomes significant challenges in latency and state management to deliver 
-                            a seamless user experience.
-                        </p>
-                        
-                        <div className="flex gap-4">
-                            {/* FIX: ADDED target="_blank" rel="noopener noreferrer" */}
-                            <a 
-                                href={project.links.github} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors"
-                            >
-                                <Github className="w-5 h-5" /> Source
-                            </a>
-                            <a 
-                                href={project.links.demo} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-xl hover:bg-cyan-500 transition-colors"
-                            >
-                                <ExternalLink className="w-5 h-5" /> Live Demo
-                            </a>
-                        </div>
-                    </div>
+function Experience({ mode, isRearView, onOpenModal }: any) {
+  const scroll = useScroll();
+  const [hovered, setHover] = useState<number | null>(null);
+  const lookTarget = useRef(new THREE.Vector3(0, 0, 0));
+  const isMobile = window.innerWidth < 768;
+  
+  useFrame((state, delta) => {
+    const t = state.clock.elapsedTime;
+    const { pointer } = state;
 
-                    {/* ... (Tech stack section same as before) ... */}
-                    <div className="w-full md:w-1/3 space-y-8">
-                        <div>
-                            <h3 className="text-sm font-mono text-gray-500 uppercase tracking-widest mb-4">Technologies</h3>
-                            <div className="flex flex-wrap gap-2">
-                                {project.tech.map(t => (
-                                    <span key={t} className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-300">
-                                        {t}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <h3 className="text-sm font-mono text-gray-500 uppercase tracking-widest mb-4">Stats</h3>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="p-4 bg-white/5 rounded-xl">
-                                    <div className="text-2xl font-bold text-white">100%</div>
-                                    <div className="text-xs text-gray-500">Completion</div>
-                                </div>
-                                <div className="p-4 bg-white/5 rounded-xl">
-                                    <div className="text-2xl font-bold text-white">2026</div>
-                                    <div className="text-xs text-gray-500">Year</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </motion.div>
-        </div>
-    );
+    if (mode === 'orbit') {
+      const angle = t * 0.1;
+      const radius = isMobile ? 25 : 22;
+      state.camera.position.lerp(new THREE.Vector3(Math.sin(angle) * radius, 5, Math.cos(angle) * radius), delta);
+      state.camera.lookAt(0, 0, 0);
+    } 
+    else if (mode === 'fly') {
+      const depth = 5 - (scroll.offset * (isMobile ? 350 : 250)); 
+      const steerX = pointer.x * (isMobile ? 10 : 15); 
+      const steerY = pointer.y * (isMobile ? 6 : 8);
+      const targetPos = new THREE.Vector3(steerX, steerY, depth);
+      state.camera.fov = THREE.MathUtils.lerp(state.camera.fov, isMobile ? 95 : 85, delta); 
+      state.camera.updateProjectionMatrix();
+      state.camera.position.lerp(targetPos, delta * 3);
+      const lookZ = isRearView ? depth + 50 : depth - 50;
+      lookTarget.current.lerp(new THREE.Vector3(steerX * 0.8, steerY * 0.8, lookZ), delta * 3);
+      state.camera.lookAt(lookTarget.current);
+    }
+  });
+
+  const targetPositions = useMemo(() => {
+    return projects.map((project, i) => {
+      if (mode === 'orbit') {
+        const angle = (i / Math.min(projects.length, 6)) * Math.PI * 2;
+        return [Math.sin(angle) * 18, 0, Math.cos(angle) * 18];
+      } else {
+        const side = project.category === 'Software' ? -1 : 1;
+        // On mobile, stack them vertically too
+        const yOffset = isMobile ? (i % 2 === 0 ? 5 : -5) : 0;
+        const xOffset = isMobile ? (side * 6) : (side * 15);
+        return [xOffset, yOffset, -i * 50];
+      }
+    });
+  }, [mode, isMobile]);
+
+  return (
+    <group>
+      <ambientLight intensity={0.5} />
+      {projects.map((project, i) => (
+        <AnimatedProject key={i} project={project} targetPos={targetPositions[i]} hovered={hovered} setHover={setHover} onOpen={onOpenModal} scale={isMobile ? 0.6 : 1} />
+      ))}
+      <ThreeHUD mode={mode} isRearView={isRearView} />
+      <Stars radius={200} count={isMobile ? 3000 : 10000} speed={mode === 'fly' ? 10 : 1} />
+    </group>
+  );
+}
+
+function ThreeHUD({ mode, isRearView }: any) {
+  const { camera } = useThree();
+  const group = useRef<THREE.Group>(null);
+  const shipRef = useRef<THREE.Group>(null);
+  
+  useFrame((state, delta) => {
+    if(group.current) {
+      group.current.position.copy(camera.position);
+      group.current.rotation.copy(camera.rotation);
+      group.current.translateZ(-4.5); 
+      group.current.translateY(-1.8);
+    }
+    if(shipRef.current) {
+      const targetY = isRearView ? -8 : 0; 
+      shipRef.current.position.y = THREE.MathUtils.lerp(shipRef.current.position.y, targetY, delta * 5);
+    }
+  });
+  return <group ref={group}><group ref={shipRef}><RealSpaceship mode={mode} /></group></group>;
+}
+
+export function Projects() {
+  const [mode, setMode] = useState<'orbit' | 'fly'>('orbit'); 
+  const [isRearView, setIsRearView] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+
+  return (
+    <div className="h-screen w-full bg-black relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-full p-4 md:p-8 z-20 pointer-events-none">
+        <h2 className="text-[10px] md:text-sm font-mono text-cyan-500 mb-1 tracking-widest uppercase flex items-center gap-2"><Terminal className="w-4 h-4" /> System.Space_Command</h2>
+        <h1 className="text-2xl md:text-6xl font-black text-white tracking-tighter">MISSION <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-purple-600">CONTROL</span></h1>
+      </div>
+      <AnimatePresence>
+        {mode === 'orbit' && (
+          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 2 }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+            <button onClick={() => setMode('fly')} className="group relative w-24 h-24 md:w-32 md:h-32 rounded-full border-2 border-cyan-500/50 flex items-center justify-center hover:scale-110 transition-all shadow-[0_0_30px_rgba(34,211,238,0.3)]">
+              <Rocket className="w-8 h-8 md:w-10 md:h-10 text-cyan-400 group-hover:rotate-45 transition-transform" />
+              <span className="absolute -bottom-8 text-[10px] font-mono text-cyan-500 tracking-widest whitespace-nowrap">LAUNCH</span>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 0, 15], fov: 60 }}>
+        <Suspense fallback={null}>
+          <ScrollControls pages={projects.length * 1.5} damping={0.1} enabled={mode === 'fly'}>
+            <Experience mode={mode} isRearView={isRearView} onOpenModal={setSelectedProject} />
+          </ScrollControls>
+          <Environment preset="city" />
+        </Suspense>
+      </Canvas>
+      <ProjectModal project={selectedProject} onClose={() => setSelectedProject(null)} />
+    </div>
+  );
 }

@@ -1,9 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, Suspense, useEffect } from 'react';
 import { motion, useMotionTemplate, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
-import { Bot, Brain, Layers, CodeSquare, FunctionSquare, Package, ChartBarDecreasing, Terminal, Cpu } from 'lucide-react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Image, Text, useScroll, ScrollControls, Environment, Stars, Sparkles, Float, Reflector } from '@react-three/drei';
+import * as THREE from 'three';
+import { Bot, Brain, Layers, CodeSquare, FunctionSquare, Package, BarChart, Terminal, Cpu, DoorOpen, X, MousePointer2, ChevronUp } from 'lucide-react';
 
-// --- 1. DATA: CERTIFICATES ---
-// Updated paths to match your GitHub public folder structure
+// --- 1. DATA: CERTIFICATES & SKILLS ---
 const certificates = [
   {
     id: 'python',
@@ -13,7 +15,7 @@ const certificates = [
     date: 'Dec 2024',
     image: '/certifications/python.webp', 
     link: 'https://udemy-certificate.s3.amazonaws.com/image/UC-1b9a9969-a0be-4e09-84c8-a2ae38425fdc.jpg',
-    color: 'from-orange-400 to-yellow-600',
+    color: '#f59e0b',
     icon: CodeSquare
   },
   {
@@ -24,7 +26,7 @@ const certificates = [
     date: 'Sep 2025',
     image: '/certifications/AIMYTHS.webp',
     link: 'https://www.udemy.com/certificate/UC-21804c5c-8ab6-46de-96f0-2ee49edb3205/',
-    color: 'from-blue-400 to-cyan-500',
+    color: '#06b6d4',
     icon: FunctionSquare
   },
   {
@@ -35,7 +37,7 @@ const certificates = [
     date: 'Oct 2025',
     image: '/certifications/HTML.webp',
     link: 'https://www.udemy.com/certificate/UC-1b400912-0a4a-4b17-8a47-6a98ced8e484/',
-    color: 'from-blue-600 to-indigo-600',
+    color: '#3b82f6',
     icon: Package
   },
   {
@@ -46,7 +48,7 @@ const certificates = [
     date: 'Dec 2024',
     image: '/certifications/AIART.webp',
     link: 'https://www.udemy.com/certificate/UC-21804c5c-8ab6-46de-96f0-2ee49edb3205/',
-    color: 'from-orange-500 to-red-600',
+    color: '#ef4444',
     icon: Terminal
   },
   {
@@ -54,31 +56,32 @@ const certificates = [
     title: 'MATLAB Onramp',
     issuer: 'Mathworks',
     category: 'Robotics & Simulation',
-    date: 'Dec 2025',
+    date: 'Dec 2025 ',
     image: '/certifications/matlab.webp',
     link: 'https://matlabacademy.mathworks.com/progress/share/certificate.html?id=9fe098f4-d0d0-464f-bded-a3e9e4bbfac8&',
-    color: 'from-green-400 to-emerald-600',
-    icon: ChartBarDecreasing
+    color: '#10b981',
+    icon: BarChart
   },
 ];
 
 const connectionMap: Record<string, string[]> = {
-    'Python': ['TensorFlow', 'PyTorch', 'OpenCV', 'ROS', 'ROS2', 'Raspberry Pi', 'NumPy', 'Pandas'],
-    'C++': ['ROS', 'ROS2', 'Embedded C', 'Arduino', 'OpenCV', 'SLAM', 'Robot Kinematics'],
-    'C': ['Embedded C', 'Arduino', 'STM32', 'RTOS'],
-    'Arduino': ['C', 'C++', 'IoT', 'Sensors'],
-    'Raspberry Pi': ['Python', 'Linux', 'IoT', 'ROS'],
-    'ESP32': ['IoT', 'MQTT', 'C++'],
+    'Python': ['TensorFlow', 'PyTorch', 'OpenCV', 'ROS', 'ROS2', 'Raspberry Pi', 'NumPy', 'Pandas', 'Deep Learning', 'Neural Networks', 'Computer Vision', 'Robotics', 'Linux', 'Gazebo', 'Nav2', 'Rviz', 'MoveIt', 'SLAM', 'Robot Kinematics', 'Path Planning', 'Sensor Integration', 'Robot Localization', 'Robotic Manipulation', 'Autonomous Navigation', 'Multi-Robot Systems',],
+    'C++': ['ROS', 'ROS2', 'Embedded C', 'Arduino', 'OpenCV', 'SLAM', 'Robot Kinematics', 'Path Planning', 'Sensor Integration', 'Robot Localization', 'Robotic Manipulation', 'Autonomous Navigation', 'Multi-Robot Systems'],
+    'C': ['Embedded C', 'Arduino', 'STM32', 'RTOS', 'Microcontrollers', 'Wireless Communication', 'Real-Time Data Processing', 'Edge Computing', 'Home Automation', 'Wearable Technology', 'Industrial IoT', 'Sensor Networks',],
+    'Arduino': ['C', 'C++', 'IoT', 'Sensors', 'Embedded Systems', 'Wireless Communication', 'Home Automation', 'Wearable Technology', 'Industrial IoT', 'Sensor Networks'],
+    'Raspberry Pi': ['Python', 'Linux', 'IoT', 'ROS', 'ROS2', 'Computer Vision', 'Robotics', 'Sensor Integration', 'Edge Computing', 'Home Automation', 'Wearable Technology', 'Industrial IoT', 'Sensor Networks'],
+    'ESP32': ['IoT', 'MQTT', 'C++', 'Embedded C', 'Sensors', 'Microcontrollers', 'Wireless Communication', 'Real-Time Data Processing', 'Edge Computing', 'Home Automation', 'Wearable Technology', 'Industrial IoT', 'Sensor Networks', 'Embedded Systems'],
     'TensorFlow': ['Python', 'Computer Vision', 'Deep Learning'],
-    'OpenCV': ['Python', 'C++', 'Robotics'],
+    'OpenCV': ['Python', 'C++', 'Robotics', 'Computer Vision', 'ROS', 'ROS2', 'SLAM', 'Autonomous Navigation', 'Sensor Integration', 'Robot Localization'],
     'React': ['Next.js', 'Node.js', 'JavaScript', 'HTML5', 'CSS3'],
     'Node.js': ['JavaScript', 'MySQL', 'React', 'Git'],
     'ROS': ['C++', 'Python', 'Linux', 'Gazebo', 'Nav2'],
-    'ROS2': ['C++', 'Python', 'Linux', 'Gazebo', 'Nav2'],
+    'ROS2': ['C++', 'Python', 'Linux', 'Gazebo', 'Nav2','Rviz', 'MoveIt', 'SLAM', 'Robot Kinematics', 'Path Planning', 'Sensor Integration', 'Robot Localization', 'Robotic Manipulation', 'Autonomous Navigation', 'Multi-Robot Systems'],
 };
 
 const filterCategories = ['All', 'Robotics & Simulation', 'Artificial Intelligence', 'Software & Web Technologies', 'Hardware & Embedded'];
 
+// --- 2. 2D COMPONENT: HOLO CARD ---
 const HoloCard = ({ cert }: { cert: any }) => {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -109,14 +112,14 @@ const HoloCard = ({ cert }: { cert: any }) => {
           <motion.div className="pointer-events-none absolute inset-0 z-20 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" style={{ maskImage, WebkitMaskImage: maskImage }} />
           <div className="absolute inset-0 flex flex-col">
             <div className="relative h-48 overflow-hidden">
-              <div className={`absolute inset-0 bg-gradient-to-tr ${cert.color} opacity-20 z-10`} />
+              <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent z-10" />
               <img src={cert.image} alt={cert.title} className="w-full h-full object-cover" />
               <div className="absolute top-4 right-4 bg-black/40 p-2 rounded-xl backdrop-blur-md border border-white/10 z-20">
                 <cert.icon className="w-5 h-5 text-white" />
               </div>
             </div>
             <div className="flex-1 p-6 bg-[#0a0a0a] flex flex-col justify-center border-t border-white/5">
-              <h3 className="text-lg font-bold text-white leading-tight group-hover:text-cyan-400 transition-colors">{cert.title}</h3>
+              <h3 className="text-lg font-bold text-white leading-tight group-hover:text-cyan-400 transition-colors line-clamp-2">{cert.title}</h3>
               <div className="flex justify-between mt-2 text-xs font-mono text-gray-500">
                 <span>{cert.issuer}</span>
                 <span>{cert.date}</span>
@@ -129,6 +132,7 @@ const HoloCard = ({ cert }: { cert: any }) => {
   );
 };
 
+// --- 3. 2D COMPONENT: SKILL CARD ---
 const InteractiveSkillCard = ({ category, hoveredSkill, setHoveredSkill }: any) => {
   const isLit = (skill: string) => hoveredSkill === skill || (hoveredSkill && connectionMap[hoveredSkill]?.includes(skill));
   const isDimmed = (skill: string) => hoveredSkill && !isLit(skill);
@@ -157,14 +161,161 @@ const InteractiveSkillCard = ({ category, hoveredSkill, setHoveredSkill }: any) 
   );
 };
 
-export function Certifications() {
-  const [hoveredSkill, setHoveredSkill] = useState<string | null>(null);
-  const [activeFilter, setActiveFilter] = useState('All');
+// --- 4. 3D COMPONENT: HALL OF HEROES ---
 
-  const sortedFilteredCerts = useMemo(() => {
-    return [...certificates]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .filter(c => activeFilter === 'All' || c.category === activeFilter);
+function CertFrame({ cert, position, rotation, index, scale = 1 }: any) {
+    const [hovered, setHover] = useState(false);
+    const mesh = useRef<THREE.Group>(null);
+
+    useFrame((state, delta) => {
+        if(mesh.current) {
+            mesh.current.position.y = position[1] + Math.sin(state.clock.elapsedTime + index) * 0.1;
+            const targetScale = hovered ? scale * 1.1 : scale;
+            mesh.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), delta * 5);
+        }
+    });
+
+    return (
+        <group 
+            ref={mesh} 
+            position={position} 
+            rotation={rotation}
+            onPointerOver={() => { document.body.style.cursor = 'pointer'; setHover(true); }}
+            onPointerOut={() => { document.body.style.cursor = 'auto'; setHover(false); }}
+            onClick={() => window.open(cert.link, '_blank')}
+        >
+            <mesh position={[0, 0, -0.05]}>
+                <boxGeometry args={[6.2, 4.2, 0.1]} />
+                <meshStandardMaterial color="#111" metalness={0.9} roughness={0.1} />
+            </mesh>
+            
+            <mesh position={[0, 0, 0]}>
+                <boxGeometry args={[6.1, 4.1, 0.05]} />
+                <meshBasicMaterial color={hovered ? cert.color : '#333'} />
+            </mesh>
+
+            <Image url={cert.image} scale={[6, 4]} position={[0, 0, 0.06]} transparent opacity={1} />
+
+            <group position={[0, -3.0, 0.2]}>
+                <mesh position={[0, 0, -0.05]}>
+                    <planeGeometry args={[6, 1.5]} />
+                    <meshBasicMaterial color="#000000" transparent opacity={0.8} />
+                </mesh>
+
+                <Text 
+                    fontSize={0.35} 
+                    maxWidth={5.8} 
+                    textAlign="center" 
+                    color="white"
+                    anchorX="center" 
+                    anchorY="middle" 
+                    position={[0, 0.3, 0]}
+                    outlineWidth={0.02}
+                    outlineColor="black"
+                >
+                    {cert.title}
+                </Text>
+
+                <Text 
+                    position={[0, -0.3, 0]} 
+                    fontSize={0.25} 
+                    color={cert.color}
+                    anchorX="center" 
+                    anchorY="middle"
+                    outlineWidth={0.01}
+                    outlineColor="black"
+                >
+                    {cert.issuer} • {cert.date}
+                </Text>
+            </group>
+        </group>
+    )
+}
+
+function HallEnvironment() {
+    return (
+        <group>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -5, 0]}>
+                <planeGeometry args={[50, 400]} />
+                <meshStandardMaterial color="#050505" roughness={0.1} metalness={0.8} />
+                <gridHelper args={[100, 50, '#222', '#111']} rotation={[-Math.PI/2, 0, 0]} />
+            </mesh>
+
+            {Array.from({ length: 20 }).map((_, i) => (
+                <group key={i} position={[0, 0, -i * 25]}>
+                    <mesh position={[-8, 0, 0]}>
+                        <boxGeometry args={[0.5, 25, 0.5]} />
+                        <meshStandardMaterial color="#333" emissive="#00ffff" emissiveIntensity={0.5} />
+                    </mesh>
+                    <mesh position={[8, 0, 0]}>
+                        <boxGeometry args={[0.5, 25, 0.5]} />
+                        <meshStandardMaterial color="#333" emissive="#00ffff" emissiveIntensity={0.5} />
+                    </mesh>
+                </group>
+            ))}
+            
+            <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+            <ambientLight intensity={1} />
+            <pointLight position={[0, 5, 0]} intensity={2} distance={20} />
+        </group>
+    )
+}
+
+function HallExperience() {
+    const scroll = useScroll();
+    const { camera } = useThree();
+    const isMobile = window.innerWidth < 768;
+
+    useFrame((state, delta) => {
+        const targetZ = -scroll.offset * (isMobile ? 100 : 150); 
+        const targetY = isMobile ? 1.5 : 0; // Lift camera on mobile
+        
+        camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ, delta * 2);
+        camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY, delta * 2);
+        
+        const mouseX = state.pointer.x * 0.5;
+        const mouseY = state.pointer.y * 0.5;
+        camera.rotation.y = THREE.MathUtils.lerp(camera.rotation.y, -mouseX * 0.2, delta * 2);
+        
+        // Disable aggressive tilt on mobile
+        if(!isMobile) {
+            camera.rotation.x = THREE.MathUtils.lerp(camera.rotation.x, mouseY * 0.1, delta * 2);
+        }
+    });
+
+    return (
+        <group>
+            <HallEnvironment />
+            {certificates.map((cert, i) => {
+                const isLeft = i % 2 === 0;
+                // Path width optimization: Narrower on mobile so frames are fully visible
+                const x = isLeft ? (isMobile ? -3.5 : -5) : (isMobile ? 3.5 : 5); 
+                const z = -i * 25 - 10; 
+                const rotY = isLeft ? 0.3 : -0.3; // Less aggressive inward tilt for mobile
+
+                return (
+                    <CertFrame 
+                        key={cert.id} 
+                        cert={cert} 
+                        index={i} 
+                        position={[x, 0, z]} 
+                        rotation={[0, rotY, 0]} 
+                        scale={isMobile ? 0.6 : 1}
+                    />
+                );
+            })}
+        </group>
+    );
+}
+
+// --- 5. MAIN COMPONENT ---
+export function Certifications() {
+  const [mode, setMode] = useState<'grid' | 'hall'>('grid');
+  const [activeFilter, setActiveFilter] = useState('All');
+  const [hoveredSkill, setHoveredSkill] = useState<string | null>(null);
+
+  const filteredCerts = useMemo(() => {
+    return certificates.filter(c => activeFilter === 'All' || c.category === activeFilter);
   }, [activeFilter]);
 
   const engineeringTrack = [
@@ -178,33 +329,93 @@ export function Certifications() {
   ];
 
   return (
-    <div className="min-h-screen pt-24 pb-20 px-6 bg-[#050505] text-white">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight">Verified <span className="bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent">Expertise</span></h1>
-        </div>
+    <div className="min-h-screen bg-[#000000] text-white relative">
+        
+        {/* --- GRID MODE UI --- */}
+        <AnimatePresence>
+            {mode === 'grid' && (
+                <motion.div 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    exit={{ opacity: 0 }} 
+                    className="pt-24 pb-20 px-6 max-w-7xl mx-auto relative z-10"
+                >
+                    <div className="text-center mb-12">
+                        <h1 className="text-4xl md:text-7xl font-bold mb-6 tracking-tight">Verified <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">Expertise</span></h1>
+                        <p className="text-gray-400 max-w-2xl mx-auto mb-8 text-sm md:text-base">
+                            A curated collection of industry-recognized certifications validating technical proficiency.
+                        </p>
+                        
+                        <button 
+                            onClick={() => setMode('hall')}
+                            className="group relative inline-flex items-center gap-3 px-6 py-3 md:px-8 md:py-4 bg-white/5 border border-white/10 rounded-full overflow-hidden hover:bg-white/10 transition-all hover:scale-105"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <DoorOpen className="w-4 h-4 md:w-5 md:h-5 text-cyan-400" />
+                            <span className="font-mono text-[10px] md:text-sm tracking-widest uppercase text-cyan-400 font-bold">Hall of Knowledge [3D]</span>
+                        </button>
+                    </div>
 
-        <div className="flex flex-wrap justify-center gap-4 mb-16">
-          {filterCategories.map(cat => (
-            <button key={cat} onClick={() => setActiveFilter(cat)} className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${activeFilter === cat ? 'bg-white text-black border-white' : 'bg-white/5 text-gray-400 border-white/10 hover:text-white'}`}>{cat}</button>
-          ))}
-        </div>
+                    <div className="flex flex-wrap justify-center gap-2 md:gap-4 mb-16">
+                        {filterCategories.map(cat => (
+                            <button key={cat} onClick={() => setActiveFilter(cat)} className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-medium border transition-all ${activeFilter === cat ? 'bg-white text-black border-white' : 'bg-white/5 text-gray-400 border-white/10 hover:text-white'}`}>{cat}</button>
+                        ))}
+                    </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-32">
-          <AnimatePresence mode="popLayout">
-            {sortedFilteredCerts.map(cert => <HoloCard key={cert.id} cert={cert} />)}
-          </AnimatePresence>
-        </div>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-32">
+                        <AnimatePresence mode="popLayout">
+                            {filteredCerts.map(cert => <HoloCard key={cert.id} cert={cert} />)}
+                        </AnimatePresence>
+                    </div>
 
-        <div className="grid lg:grid-cols-2 gap-12">
-          <div className="space-y-8">
-            {engineeringTrack.map((cat, i) => <InteractiveSkillCard key={i} category={cat} hoveredSkill={hoveredSkill} setHoveredSkill={setHoveredSkill} />)}
-          </div>
-          <div className="space-y-8">
-            {computationalTrack.map((cat, i) => <InteractiveSkillCard key={i} category={cat} hoveredSkill={hoveredSkill} setHoveredSkill={setHoveredSkill} />)}
-          </div>
-        </div>
-      </div>
+                    <div className="grid lg:grid-cols-2 gap-12">
+                        <div className="space-y-8">
+                            {engineeringTrack.map((cat, i) => <InteractiveSkillCard key={i} category={cat} hoveredSkill={hoveredSkill} setHoveredSkill={setHoveredSkill} />)}
+                        </div>
+                        <div className="space-y-8">
+                            {computationalTrack.map((cat, i) => <InteractiveSkillCard key={i} category={cat} hoveredSkill={hoveredSkill} setHoveredSkill={setHoveredSkill} />)}
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {/* --- HALL MODE UI --- */}
+        <AnimatePresence>
+            {mode === 'hall' && (
+                <motion.div 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    exit={{ opacity: 0 }} 
+                    className="fixed inset-0 z-50 bg-black"
+                >
+                    <div className="absolute top-4 right-4 md:top-8 md:right-8 z-50">
+                        <button 
+                            onClick={() => setMode('grid')}
+                            className="flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 bg-red-500/10 border border-red-500/50 rounded-full text-red-400 font-mono text-[10px] md:text-xs hover:bg-red-500/20 transition-all"
+                        >
+                            <X className="w-4 h-4" /> EXIT
+                        </button>
+                    </div>
+
+                    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 text-cyan-400/50 font-mono text-[10px] md:text-xs tracking-[0.2em] animate-pulse pointer-events-none">
+                        <MousePointer2 className="w-4 h-4" />
+                        <span>SCROLL TO EXPLORE</span>
+                        <ChevronUp className="w-4 h-4" />
+                    </div>
+
+                    <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 0, 5], fov: 50 }}>
+                        <Suspense fallback={null}>
+                            <color attach="background" args={['#000000']} />
+                            <fog attach="fog" args={['#000000', 5, 40]} />
+                            <ScrollControls pages={certificates.length * 1.2} damping={0.2}>
+                                <HallExperience />
+                            </ScrollControls>
+                        </Suspense>
+                    </Canvas>
+                </motion.div>
+            )}
+        </AnimatePresence>
     </div>
   );
 }
