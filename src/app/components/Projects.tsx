@@ -1,6 +1,6 @@
 import React, { useRef, useState, useMemo, Suspense, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Image, Text, useScroll, ScrollControls, Environment, Stars, Sparkles, useGLTF } from '@react-three/drei';
+import { Image, Text, useScroll, ScrollControls, Environment, Stars, Sparkles, useGLTF, Html, useProgress } from '@react-three/drei';
 import * as THREE from 'three';
 import { Terminal, Rocket, X, Github, ExternalLink, Tag, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,6 +30,21 @@ const projects: Project[] = [
   { id: 7, title: 'Kanban Board', category: 'Software', tech: ['React', 'Drag & Drop API'], image: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?q=80&w=1939&auto=format&fit=crop', description: 'Productivity tool.', fullDescription: 'A Trello-style task management app with fluid drag-and-drop.', stats: [{ label: 'Users', value: 'Active' }, { label: 'Year', value: '2025' }], github: '#', demo: '#', color: '#34d399' },
   { id: 8, title: 'Color Palette Gen', category: 'Software', tech: ['Algorithms', 'JavaScript'], image: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1000&auto=format&fit=crop', description: 'Algorithmic color tool.', fullDescription: 'Generates harmonious color palettes based on math.', stats: [{ label: 'Colors', value: 'Infinite' }, { label: 'Year', value: '2024' }], github: '#', demo: '#', color: '#60a5fa' }
 ];
+
+// --- 1. NEW: Loading Component for visual feedback ---
+function CanvasLoader() {
+  const { progress } = useProgress();
+  return (
+    <Html center>
+      <div className="flex flex-col items-center justify-center">
+        <span className="loading loading-spinner text-cyan-500 w-10 h-10"></span>
+        <p className="mt-4 text-cyan-500 font-mono text-sm tracking-widest animate-pulse">
+          INITIALIZING... {progress.toFixed(0)}%
+        </p>
+      </div>
+    </Html>
+  );
+}
 
 // --- COMPONENTS ---
 function ProjectModal({ project, onClose }: { project: Project | null, onClose: () => void }) {
@@ -78,11 +93,9 @@ function ProjectModal({ project, onClose }: { project: Project | null, onClose: 
 function RealSpaceship({ mode }: { mode: string }) {
   const group = useRef<THREE.Group>(null);
   const engineRef = useRef<THREE.PointLight>(null);
-  // SSR Check for mobile to prevent build crashes
   const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
   
   // Use a simple box as fallback if GLTF fails, or try loading your model
-  // Note: Ensure /spaceship.glb exists in public folder
   const { scene } = useGLTF('/spaceship.glb'); 
 
   useFrame((state) => {
@@ -245,7 +258,6 @@ export function Projects() {
       </div>
       <AnimatePresence>
         {mode === 'orbit' && (
-          // EDITED: Changed top-1/2 to top-[60%] for mobile to avoid text overlap
           <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 2 }} className="absolute top-[60%] md:top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
             <button onClick={() => setMode('fly')} className="group relative w-24 h-24 md:w-32 md:h-32 rounded-full border-2 border-cyan-500/50 flex items-center justify-center hover:scale-110 transition-all shadow-[0_0_30px_rgba(34,211,238,0.3)] bg-black/20 backdrop-blur-sm">
               <Rocket className="w-8 h-8 md:w-10 md:h-10 text-cyan-400 group-hover:rotate-45 transition-transform" />
@@ -255,7 +267,8 @@ export function Projects() {
         )}
       </AnimatePresence>
       <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 0, 15], fov: 60 }}>
-        <Suspense fallback={null}>
+        {/* 2. UPDATED: Suspense now uses the visual CanvasLoader instead of null */}
+        <Suspense fallback={<CanvasLoader />}>
           <ScrollControls pages={projects.length * 1.5} damping={0.1} enabled={mode === 'fly'}>
             <Experience mode={mode} isRearView={isRearView} onOpenModal={setSelectedProject} />
           </ScrollControls>
@@ -266,3 +279,6 @@ export function Projects() {
     </div>
   );
 }
+
+// --- 3. NEW: Preload the spaceship so it downloads in the background immediately ---
+useGLTF.preload('/spaceship.glb');
