@@ -1,8 +1,8 @@
 import React, { useRef, useState, useMemo, Suspense, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Image, Text, useScroll, ScrollControls, Environment, Stars, Sparkles, Trail, useGLTF } from '@react-three/drei';
+import { Image, Text, useScroll, ScrollControls, Environment, Stars, Sparkles, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { Terminal, MousePointer2, ChevronUp, Rocket, Eye, EyeOff, X, Github, ExternalLink, Tag, Layers } from 'lucide-react';
+import { Terminal, Rocket, X, Github, ExternalLink, Tag, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- TYPES & DATA ---
@@ -25,12 +25,13 @@ const projects: Project[] = [
   { id: 2, title: 'Hybrid Racing Controller', category: 'Hardware', tech: ['Arduino', 'Potentiometer', 'OpenCV', 'Python'], image: 'https://images.unsplash.com/photo-1593118247619-e2d6f056869e?q=80&w=1000&auto=format&fit=crop', description: 'Physical Wheel + AI Gestures.', fullDescription: 'A unique hybrid game controller combining hardware precision with CV gesture tracking.', stats: [{ label: 'Input Lag', value: '<20ms' }, { label: 'Year', value: '2026' }], github: 'https://github.com/paneendrakumar0/Hybrid-Racing-Sim', demo: '#', color: '#ef4444' },
   { id: 3, title: 'Robotic Hand Sim', category: 'Software', tech: ['ROS 2', 'Rviz2', 'OpenCV', 'URDF'], image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=1000&auto=format&fit=crop', description: 'Vision-based Teleoperation.', fullDescription: 'A digital twin simulation of a robotic hand in Rviz2 using MediaPipe for hand tracking.', stats: [{ label: 'Joints', value: '21' }, { label: 'Year', value: '2026' }], github: 'https://github.com/paneendrakumar0/Robotic-Hand-Simulation-in-ROS2', demo: '#', color: '#8b5cf6' },
   { id: 4, title: 'Gesture Control Rover', category: 'Hardware', tech: ['OpenCV', 'Arduino', 'Python'], image: 'https://images.unsplash.com/photo-1555255707-c07966088b7b?q=80&w=1000&auto=format&fit=crop', description: 'Hand-tracking rover interface.', fullDescription: 'A 4-wheeled rover piloted purely by hand gestures transmitted via UDP.', stats: [{ label: 'Latency', value: '<50ms' }, { label: 'Year', value: '2025' }], github: '#', demo: '#', color: '#a78bfa' },
-  { id: 5, title: 'Amazon Prime Clone', category: 'Software', tech: ['React', 'Firebase', 'Tailwind'], image: 'https://unsplash.com/photos/a-phone-with-the-amazon-prime-logo-on-it-MZJzaEcUkCI&fit=crop', description: 'Pixel-perfect replica.', fullDescription: 'A responsive web application replicating core Prime Video functionality.', stats: [{ label: 'Completion', value: '100%' }, { label: 'Year', value: '2025' }], github: 'https://github.com/paneendrakumar0', demo: '#', color: '#22d3ee' },
+  { id: 5, title: 'Amazon Prime Clone', category: 'Software', tech: ['React', 'Firebase', 'Tailwind'], image: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=1000&auto=format&fit=crop', description: 'Pixel-perfect replica.', fullDescription: 'A responsive web application replicating core Prime Video functionality.', stats: [{ label: 'Completion', value: '100%' }, { label: 'Year', value: '2025' }], github: 'https://github.com/paneendrakumar0', demo: '#', color: '#22d3ee' },
   { id: 6, title: 'Waste AI Sorter', category: 'Hardware', tech: ['TensorFlow Lite', 'ESP32', 'Servos'], image: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1000&auto=format&fit=crop', description: 'IoT Bio/Non-Bio classification.', fullDescription: 'An intelligent waste bin using ESP32-CAM and TensorFlow Lite.', stats: [{ label: 'Accuracy', value: '94%' }, { label: 'Year', value: '2024' }], github: '#', demo: '#', color: '#f472b6' },
   { id: 7, title: 'Kanban Board', category: 'Software', tech: ['React', 'Drag & Drop API'], image: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?q=80&w=1939&auto=format&fit=crop', description: 'Productivity tool.', fullDescription: 'A Trello-style task management app with fluid drag-and-drop.', stats: [{ label: 'Users', value: 'Active' }, { label: 'Year', value: '2025' }], github: '#', demo: '#', color: '#34d399' },
   { id: 8, title: 'Color Palette Gen', category: 'Software', tech: ['Algorithms', 'JavaScript'], image: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1000&auto=format&fit=crop', description: 'Algorithmic color tool.', fullDescription: 'Generates harmonious color palettes based on math.', stats: [{ label: 'Colors', value: 'Infinite' }, { label: 'Year', value: '2024' }], github: '#', demo: '#', color: '#60a5fa' }
 ];
 
+// --- COMPONENTS ---
 function ProjectModal({ project, onClose }: { project: Project | null, onClose: () => void }) {
   useEffect(() => {
     if (project) document.body.style.overflow = 'hidden';
@@ -77,8 +78,12 @@ function ProjectModal({ project, onClose }: { project: Project | null, onClose: 
 function RealSpaceship({ mode }: { mode: string }) {
   const group = useRef<THREE.Group>(null);
   const engineRef = useRef<THREE.PointLight>(null);
-  const { scene } = useGLTF('/spaceship.glb');
-  const isMobile = window.innerWidth < 768;
+  // SSR Check for mobile to prevent build crashes
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+  
+  // Use a simple box as fallback if GLTF fails, or try loading your model
+  // Note: Ensure /spaceship.glb exists in public folder
+  const { scene } = useGLTF('/spaceship.glb'); 
 
   useFrame((state) => {
     if (!group.current) return;
@@ -152,7 +157,9 @@ function Experience({ mode, isRearView, onOpenModal }: any) {
   const scroll = useScroll();
   const [hovered, setHover] = useState<number | null>(null);
   const lookTarget = useRef(new THREE.Vector3(0, 0, 0));
-  const isMobile = window.innerWidth < 768;
+  
+  // SSR Safe Mobile Check
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
   
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime;
@@ -185,8 +192,8 @@ function Experience({ mode, isRearView, onOpenModal }: any) {
         return [Math.sin(angle) * 18, 0, Math.cos(angle) * 18];
       } else {
         const side = project.category === 'Software' ? -1 : 1;
-        // On mobile, stack them vertically too
-        const yOffset = isMobile ? (i % 2 === 0 ? 5 : -5) : 0;
+        // On mobile, increase vertical spacing (yOffset) to prevent stacking collisions
+        const yOffset = isMobile ? (i % 2 === 0 ? 6 : -6) : 0;
         const xOffset = isMobile ? (side * 6) : (side * 15);
         return [xOffset, yOffset, -i * 50];
       }
@@ -238,8 +245,9 @@ export function Projects() {
       </div>
       <AnimatePresence>
         {mode === 'orbit' && (
-          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 2 }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
-            <button onClick={() => setMode('fly')} className="group relative w-24 h-24 md:w-32 md:h-32 rounded-full border-2 border-cyan-500/50 flex items-center justify-center hover:scale-110 transition-all shadow-[0_0_30px_rgba(34,211,238,0.3)]">
+          // EDITED: Changed top-1/2 to top-[60%] for mobile to avoid text overlap
+          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 2 }} className="absolute top-[60%] md:top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+            <button onClick={() => setMode('fly')} className="group relative w-24 h-24 md:w-32 md:h-32 rounded-full border-2 border-cyan-500/50 flex items-center justify-center hover:scale-110 transition-all shadow-[0_0_30px_rgba(34,211,238,0.3)] bg-black/20 backdrop-blur-sm">
               <Rocket className="w-8 h-8 md:w-10 md:h-10 text-cyan-400 group-hover:rotate-45 transition-transform" />
               <span className="absolute -bottom-8 text-[10px] font-mono text-cyan-500 tracking-widest whitespace-nowrap">LAUNCH</span>
             </button>
