@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
-import { X, Github, ExternalLink, Calendar, Tag } from 'lucide-react';
+import { X, Github, ExternalLink, Tag, Layers } from 'lucide-react'; // Added Layers icon
 import { motion, AnimatePresence } from "framer-motion";
 
-// Define the shape of a project for type safety
 export interface Project {
   id: number;
   title: string;
@@ -11,6 +10,8 @@ export interface Project {
   image: string;
   category: 'Software' | 'Hardware';
   tech: string[];
+  // Ensure this type matches your data source
+  stats: { label: string; value: string }[]; 
   github: string;
   demo: string;
 }
@@ -21,7 +22,6 @@ interface ProjectModalProps {
 }
 
 export function ProjectModal({ project, onClose }: ProjectModalProps) {
-  // Prevent body scroll when modal is open
   useEffect(() => {
     if (project) {
       document.body.style.overflow = 'hidden';
@@ -43,7 +43,7 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
         onClick={onClose}
       >
         <motion.div
-          layoutId={`project-${project.id}`} // Connects to the grid card for seamless transition
+          layoutId={`project-${project.id}`}
           initial={{ scale: 0.9, y: 20, opacity: 0 }}
           animate={{ scale: 1, y: 0, opacity: 1 }}
           exit={{ scale: 0.9, y: 20, opacity: 0 }}
@@ -71,7 +71,6 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
               transition={{ duration: 0.5 }}
             />
             
-            {/* Floating Category Badge */}
             <div className="absolute bottom-6 left-6 z-20">
               <span className={`px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider border backdrop-blur-md ${
                 project.category === 'Software' 
@@ -102,63 +101,95 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
 
               <div className="h-px w-full bg-white/10" />
 
-              {/* Detailed Description */}
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="prose prose-invert max-w-none text-gray-300 leading-relaxed"
-              >
-                <p>{project.fullDescription}</p>
-              </motion.div>
+              <div className="grid md:grid-cols-3 gap-8">
+                {/* Left Column: Description & Tech */}
+                <div className="md:col-span-2 space-y-6">
+                   <motion.div 
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="prose prose-invert max-w-none text-gray-300 leading-relaxed"
+                  >
+                    <p>{project.fullDescription}</p>
+                  </motion.div>
 
-              {/* Tech Stack */}
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
-              >
-                <h3 className="text-sm font-mono text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                  <Tag className="w-4 h-4" /> Technologies Used
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {project.tech.map((tech, idx) => (
-                    <span
-                      key={idx}
-                      className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-md text-gray-300 text-sm hover:border-white/30 transition-colors cursor-default"
-                    >
-                      {tech}
-                    </span>
-                  ))}
+                  <motion.div 
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <h3 className="text-sm font-mono text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                      <Tag className="w-4 h-4" /> Technologies Used
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {project.tech.map((tech, idx) => (
+                        <span
+                          key={idx}
+                          className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-md text-gray-300 text-sm hover:border-white/30 transition-colors cursor-default"
+                        >
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  </motion.div>
                 </div>
-              </motion.div>
 
-              {/* Footer Actions */}
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4"
-              >
-                <a
-                  href={project.github}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-white/5 border border-white/10 text-white font-semibold hover:bg-white/10 hover:scale-[1.02] transition-all group"
-                >
-                  <Github className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                  View Source Code
-                </a>
-                <a
-                  href={project.demo}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-gradient-to-r from-cyan-600 to-purple-600 text-white font-bold shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all group"
-                >
-                  <ExternalLink className="w-5 h-5 group-hover:-translate-y-1 group-hover:translate-x-1 transition-transform" />
-                  Live Demo
-                </a>
-              </motion.div>
+                {/* Right Column: Stats & Links */}
+                <div className="space-y-6">
+                   {/* STATS SECTION ADDED HERE */}
+                   {project.stats && (
+                      <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.25 }}
+                        className="bg-white/5 border border-white/5 p-4 rounded-xl"
+                      >
+                        <h3 className="text-xs font-mono text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                          <Layers className="w-4 h-4" /> Project Stats
+                        </h3>
+                        <div className="space-y-3">
+                          {project.stats.map((stat, i) => (
+                            <div key={i} className="flex justify-between items-center border-b border-white/5 pb-2 last:border-0 last:pb-0">
+                               <span className="text-xs uppercase text-gray-500">{stat.label}</span>
+                               <span className="text-sm font-bold text-white">{stat.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+                   )}
+
+                   {/* Links */}
+                   <motion.div 
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="flex flex-col gap-3"
+                  >
+                    {project.github !== '#' && (
+                      <a
+                        href={project.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-semibold hover:bg-white/10 hover:scale-[1.02] transition-all group"
+                      >
+                        <Github className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                        View Code
+                      </a>
+                    )}
+                    {project.demo !== '#' && (
+                      <a
+                        href={project.demo}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-purple-600 text-white font-bold shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all group"
+                      >
+                        <ExternalLink className="w-5 h-5 group-hover:-translate-y-1 group-hover:translate-x-1 transition-transform" />
+                        Live Demo
+                      </a>
+                    )}
+                  </motion.div>
+                </div>
+              </div>
 
             </div>
           </div>

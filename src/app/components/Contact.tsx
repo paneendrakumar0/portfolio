@@ -36,7 +36,7 @@ const itemVariants = {
 };
 
 // --- REUSABLE TILT CARD ---
-const TiltCard = ({ children, className = "" }) => {
+const TiltCard = ({ children, className = "" }: any) => {
   return (
     <motion.div
       whileHover={{ scale: 1.01 }}
@@ -57,7 +57,7 @@ export function Contact() {
   const [copied, setCopied] = useState(false);
 
   // --- EMAILJS INTEGRATION ---
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -80,8 +80,7 @@ export function Contact() {
       setFormData({ name: '', email: '', message: '' });
       setTimeout(() => setIsSent(false), 5000); 
 
-    } catch (error) {
-      // --- DEBUGGING LOG ---
+    } catch (error: any) {
       console.error('EMAILJS ERROR:', error); 
       alert(`Failed to send: ${error.text || "Check console (F12) for details"}. \n\nTip: Disable AdBlocker if active.`);
     } finally {
@@ -89,7 +88,7 @@ export function Contact() {
     }
   };
 
-  const handleChange = (e) => {
+  const handleChange = (e: any) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -111,7 +110,7 @@ export function Contact() {
     { label: 'Years Experience', value: '2+', icon: Briefcase, color: 'text-cyan-400', border: 'border-cyan-500/20' },
     { label: 'Projects Completed', value: '10+', icon: Code2, color: 'text-purple-400', border: 'border-purple-500/20' },
     { label: 'Certifications', value: '8+', icon: Award, color: 'text-pink-400', border: 'border-pink-500/20' },
-    { label: 'Hackathons Won', value: '3', icon: Trophy, color: 'text-yellow-400', border: 'border-yellow-500/20' },
+    { label: 'Hackathons Won', value: '2', icon: Trophy, color: 'text-yellow-400', border: 'border-yellow-500/20' },
   ];
 
   return (
@@ -291,8 +290,8 @@ export function Contact() {
             {/* 1. Social Links */}
             <div className="bg-gray-900/30 border border-gray-800 p-6 rounded-2xl backdrop-blur-sm">
               <h3 className="text-gray-200 font-bold mb-6 flex items-center gap-2">
-                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                 Connect Socially
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  Connect Socially
               </h3>
               <div className="space-y-3">
                 {socialLinks.map((social, idx) => (
@@ -316,12 +315,14 @@ export function Contact() {
 
             {/* 2. SUPERCHARGED DOWNLOAD RESUME BUTTON */}
             <motion.a 
-              href="https://drive.google.com/uc?export=download&id=16qKtDRFsaO7n1fgpROgjNVO012dh8OwT"
-              target="_blank" 
-              rel="noopener noreferrer"
+              // UPDATED LINK FOR DIRECT DOWNLOAD
+              href="https://drive.google.com/uc?export=download&id=1iMn2E8R_9om1I3BpwNx54CyxbMksonM5"
+              // REMOVED target="_blank" to allow direct download
+              // ADDED download attribute
+              download="Paneendra_Resume.pdf"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="group relative flex-1 min-h-[180px] rounded-2xl p-[2px] overflow-hidden"
+              className="group relative flex-1 min-h-[180px] rounded-2xl p-[2px] overflow-hidden cursor-pointer"
             >
                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 animate-pulse group-hover:animate-spin-slow transition-all" />
                <div className="relative w-full h-full bg-[#0a0a0a] rounded-2xl p-8 flex flex-col justify-center items-center text-center overflow-hidden">

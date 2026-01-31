@@ -1,34 +1,32 @@
 import React, { useRef, useMemo, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
-import { Trophy, Code2, Award, Users, Calendar, Laptop, ExternalLink, Rocket, Megaphone, School, School2, University, GraduationCap } from 'lucide-react';
+import { Trophy, Code2, Award, Users, Laptop, ExternalLink, Rocket, Megaphone, School, School2, GraduationCap } from 'lucide-react';
 
-// --- 1. 3D PHYSICS CARD ---
+// --- TILT CARD COMPONENT ---
 const TiltCard = ({ 
   children, 
   gradient = "from-gray-800 to-gray-900", 
   className = "", 
   isFocused,    
   isBlurred     
-}) => {
+}: any) => {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const mouseX = useSpring(x, { stiffness: 150, damping: 15 });
   const mouseY = useSpring(y, { stiffness: 150, damping: 15 });
   
-  // Mobile Detection
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     setIsMobile(window.innerWidth < 768);
   }, []);
 
-  function onMouseMove({ currentTarget, clientX, clientY }) {
-    if (isMobile) return; // Disable 3D tilt on mobile for better readability
+  function onMouseMove({ currentTarget, clientX, clientY }: any) {
+    if (isMobile) return;
     const { left, top, width, height } = currentTarget.getBoundingClientRect();
     x.set(clientX - left - width / 2);
     y.set(clientY - top - height / 2);
   }
 
-  // Reduced tilt angles for mobile
   const rotateX = useTransform(mouseY, [-200, 200], [isMobile ? "2deg" : "10deg", isMobile ? "-2deg" : "-10deg"]);
   const rotateY = useTransform(mouseX, [-200, 200], [isMobile ? "-2deg" : "-10deg", isMobile ? "2deg" : "10deg"]);
 
@@ -50,20 +48,11 @@ const TiltCard = ({
         style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
         className="relative h-full group"
       >
-        {isFocused && !isMobile && (
-           <motion.div 
-             initial={{ opacity: 0 }}
-             animate={{ opacity: 1 }}
-             className="absolute -top-32 left-1/2 -translate-x-1/2 w-32 h-64 bg-gradient-to-b from-white/20 via-white/5 to-transparent blur-3xl -z-10 pointer-events-none"
-           />
-        )}
-
         <div 
            style={{ transform: isMobile ? "none" : "translateZ(-10px)" }}
            className={`absolute inset-1 bg-gradient-to-br ${gradient} blur-xl opacity-0 group-hover:opacity-40 transition-opacity duration-500 rounded-2xl`}
         />
-        
-        <div className="relative h-full bg-gray-900/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 md:p-6 shadow-xl overflow-hidden" style={{ transform: isMobile ? "none" : "translateZ(0px)" }}>
+        <div className="relative h-full bg-gray-900/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 md:p-6 shadow-xl overflow-hidden" style={{ transform: isMobile ? "none" : "translateZ(0px)" }}>
           {children}
         </div>
       </motion.div>
@@ -71,9 +60,9 @@ const TiltCard = ({
   );
 };
 
-// --- 2. TEMPORAL SCRUBBER ---
-const TemporalScrubber = ({ years, activeYear, isGlobalBlur }) => {
-  const scrollToYear = (year) => {
+// --- TEMPORAL SCRUBBER ---
+const TemporalScrubber = ({ years, activeYear, isGlobalBlur }: any) => {
+  const scrollToYear = (year: string) => {
     const element = document.getElementById(`year-marker-${year}`);
     if (element) {
       const y = element.getBoundingClientRect().top + window.scrollY - 100;
@@ -87,8 +76,7 @@ const TemporalScrubber = ({ years, activeYear, isGlobalBlur }) => {
       animate={{ opacity: isGlobalBlur ? 0.1 : 1 }} 
     >
       <div className="h-24 w-px bg-gradient-to-b from-transparent to-gray-600"></div>
-      
-      {years.map((year) => (
+      {years.map((year: string) => (
         <button
           key={year}
           onClick={() => scrollToYear(year)}
@@ -106,7 +94,6 @@ const TemporalScrubber = ({ years, activeYear, isGlobalBlur }) => {
           }`} />
         </button>
       ))}
-
       <div className="h-24 w-px bg-gradient-to-b from-gray-600 to-transparent"></div>
     </motion.div>
   );
@@ -120,8 +107,38 @@ export function Achievements() {
   });
   
   const beamHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
-  const [activeYear, setActiveYear] = useState(null);
-  const [hoveredItem, setHoveredItem] = useState(null); 
+  const [activeYear, setActiveYear] = useState<string | null>(null);
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null); 
+
+  // --- UPDATED PROFILES USING README WIDGETS ---
+  const codingProfiles = [
+     { 
+       id: 'c1', 
+       platform: 'LeetCode', 
+       // Used the exact username from your screenshot: WaRRDUFY7j
+       imageUrl: 'https://leetcard.jacoblin.cool/WaRRDUFY7j?theme=dark&font=syne_mono&ext=heatmap',
+       color: 'from-orange-500 to-yellow-500', 
+       link: 'https://leetcode.com/u/WaRRDUFY7j/' 
+     },
+     { 
+       id: 'c2', 
+       platform: 'Codeforces', // Changed from CodeChef to Codeforces
+       // Used the username from your screenshot: paneendra
+       imageUrl: 'https://codeforces-readme-stats.vercel.app/api/card?username=paneendra&theme=dark&disable_animations=true',
+       color: 'from-blue-600 to-cyan-500', 
+       link: 'https://codeforces.com/profile/paneendra'
+     },
+     { 
+       id: 'c3', 
+       platform: 'Kaggle', 
+       // Kaggle doesn't have a reliable widget, so we keep a clean fallback card
+       imageUrl: null,
+       rank: 'Novice Contributor',
+       color: 'from-cyan-500 to-blue-500', 
+       icon: Award,
+       link: 'https://www.kaggle.com/paneendrakumar' 
+     },
+  ];
 
   const rawTimelineData = [
     { id: 't1', category: 'position', title: 'Junior Member - CCA', org: 'NIT Durgapur', date: 'May 2025 - Present', sortDate: '2025-05', desc: 'Member in Mechatronics and Robot Operating System Domain', icon: Users, gradient: 'from-purple-600 to-indigo-600' },
@@ -155,12 +172,6 @@ export function Achievements() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [years]);
 
-  const codingProfiles = [
-     { id: 'c1', platform: 'LeetCode', rank: '~50,00,000', color: 'from-orange-500 to-yellow-500', text_color: 'text-orange-400', icon: Code2, link: 'https://leetcode.com/u/WaRRDUFY7j/' },
-     { id: 'c2', platform: 'CodeChef', rank: '1400 / Unrated', color: 'from-amber-700 to-orange-600', text_color: 'text-amber-500', icon: Laptop, link: 'https://www.codechef.com/users/paneendrakumar' },
-     { id: 'c3', platform: 'Kaggle', rank: 'Novice Contributor', color: 'from-blue-500 to-cyan-500', text_color: 'text-blue-400', icon: Award, link: 'https://www.kaggle.com/paneendrakumar' },
-  ];
-
   const hackathons = [
     { id: 'h1', name: 'Techmela', position: '1st Place', date: 'Nov 2025', description: 'Built an AI-driven Waste Segregation system using IoT sensors and Computer Vision.', tags: ['IoT', 'Python', 'CV'],},
   ];
@@ -187,6 +198,7 @@ export function Achievements() {
           </p>
         </motion.div>
 
+        {/* --- STATS CARDS --- */}
         <div className="grid md:grid-cols-3 gap-8 mb-40">
           {codingProfiles.map((profile, idx) => (
             <motion.a 
@@ -199,27 +211,52 @@ export function Achievements() {
               transition={{ delay: idx * 0.1 }}
               onMouseEnter={() => setHoveredItem(profile.id)}
               onMouseLeave={() => setHoveredItem(null)}
+              className="h-full"
             >
               <TiltCard 
                 gradient={profile.color}
                 isFocused={hoveredItem === profile.id}
                 isBlurred={hoveredItem !== null && hoveredItem !== profile.id}
+                className="h-full"
               >
-                 <div className="flex justify-between items-start mb-6">
-                   <div className={`p-3 rounded-xl bg-gradient-to-br ${profile.color} bg-opacity-20`}>
-                      <profile.icon className="w-8 h-8 text-white" />
+                 {profile.imageUrl ? (
+                   // DYNAMIC WIDGETS (LeetCode & Codeforces)
+                   <div className="flex flex-col h-full justify-between">
+                     <div className="flex-1 flex items-center justify-center mb-4">
+                       <img 
+                         src={profile.imageUrl} 
+                         alt={`${profile.platform} Stats`} 
+                         className="w-full h-auto rounded-lg shadow-lg"
+                       />
+                     </div>
+                     {/* ADDED: Platform Name */}
+                     <div>
+                       <h3 className="text-2xl font-bold text-white">{profile.platform}</h3>
+                     </div>
                    </div>
-                   <ExternalLink className="w-5 h-5 text-gray-500 group-hover:text-white transition-colors" />
-                </div>
-                <div className="mt-6">
-                  <h3 className="text-2xl font-bold">{profile.platform}</h3>
-                  <p className={`font-mono text-sm mt-1 ${profile.text_color}`}>{profile.rank}</p>
-                </div>
+                 ) : (
+                   // STATIC CARD (Kaggle)
+                   <div className="flex flex-col h-full justify-between">
+                     <div className="flex justify-between items-start mb-6">
+                        <div className={`p-3 rounded-xl bg-gradient-to-br ${profile.color} bg-opacity-20`}>
+                            {profile.icon && <profile.icon className="w-8 h-8 text-white" />}
+                        </div>
+                        <ExternalLink className="w-5 h-5 text-gray-500 group-hover:text-white transition-colors" />
+                     </div>
+                     <div>
+                        <h3 className="text-2xl font-bold">{profile.platform}</h3>
+                        <p className="font-mono text-sm mt-1 text-cyan-400">
+                            {profile.rank}
+                        </p>
+                     </div>
+                   </div>
+                 )}
               </TiltCard>
             </motion.a>
           ))}
         </div>
 
+        {/* --- MAJOR VICTORIES --- */}
         <section className="mb-40">
              <h2 className="text-3xl font-bold text-center mb-12 flex items-center justify-center gap-3">
                <Trophy className="text-yellow-500" /> 
@@ -251,10 +288,10 @@ export function Achievements() {
                                     <span key={t} className="px-2 py-1 bg-black/50 border border-white/10 rounded text-[10px] font-mono text-gray-400">#{tag}</span>
                                 ))}
                              </div>
-                         </div>
-                         <div className="text-right md:border-l md:border-white/10 md:pl-6 font-mono w-full md:w-auto">
+                          </div>
+                          <div className="text-right md:border-l md:border-white/10 md:pl-6 font-mono w-full md:w-auto">
                              <p className="text-gray-500 text-sm">{hack.date}</p>
-                         </div>
+                          </div>
                     </div>
                  </TiltCard>
                </motion.div>
@@ -272,6 +309,7 @@ export function Achievements() {
             </motion.div>
 
           <div className="relative mx-auto max-w-6xl pb-32">
+            {/* Timeline center line and beam code remains same */}
             <div className="absolute left-4 md:left-1/2 -top-8 transform -translate-x-1/2 flex flex-col items-center z-20">
                 <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-black border-2 border-green-500 shadow-[0_0_15px_#22c55e]">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-ping"></div>
@@ -311,7 +349,7 @@ export function Achievements() {
 
                     <div className={`relative flex items-center md:justify-between`}>
                       <div className={`pl-12 md:pl-0 md:w-5/12 ${isLeft ? 'block' : 'hidden md:block md:opacity-0'}`}>
-                         {isLeft && (
+                          {isLeft && (
                              <motion.div
                               initial={{ opacity: 0, x: -50 }} 
                               whileInView={{ opacity: 1, x: 0 }}
@@ -334,7 +372,7 @@ export function Achievements() {
                                   <p className="text-gray-400 text-xs md:text-sm leading-relaxed">{item.desc}</p>
                                </TiltCard>
                              </motion.div>
-                         )}
+                          )}
                       </div>
 
                       <motion.div 
