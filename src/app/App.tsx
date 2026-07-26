@@ -4,8 +4,8 @@ import { Navigation } from './components/Navigation';
 import { Home } from './components/Home';
 import { Achievements } from './components/Achievements';
 import { Projects } from './components/Projects';
-import { Certifications } from './components/Certifications';
 import { Contact } from './components/Contact';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('Home');
@@ -43,7 +43,9 @@ export default function App() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4, ease: "easeInOut" }}
           >
-            {renderPage()}
+            <ErrorBoundary key={currentPage}>
+              {renderPage()}
+            </ErrorBoundary>
           </motion.div>
         </AnimatePresence>
       </main>
