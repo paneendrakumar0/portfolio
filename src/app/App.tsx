@@ -1,11 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Navigation } from './components/Navigation';
-import { Home } from './components/Home';
-import { Achievements } from './components/Achievements';
-import { Projects } from './components/Projects';
-import { Contact } from './components/Contact';
 import { ErrorBoundary } from './components/ErrorBoundary';
+
+// Lazy load section components for performance and smaller initial bundle size
+const Home = lazy(() => import('./components/Home').then(m => ({ default: m.Home })));
+const Achievements = lazy(() => import('./components/Achievements').then(m => ({ default: m.Achievements })));
+const Projects = lazy(() => import('./components/Projects').then(m => ({ default: m.Projects })));
+const Certifications = lazy(() => import('./components/Certifications').then(m => ({ default: m.Certifications })));
+const Contact = lazy(() => import('./components/Contact').then(m => ({ default: m.Contact })));
+
+const PageLoader = () => (
+  <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+    <div className="w-10 h-10 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin"></div>
+    <span className="font-mono text-xs tracking-widest text-cyan-400 animate-pulse">INITIALIZING MODULE...</span>
+  </div>
+);
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('Home');
@@ -44,7 +54,9 @@ export default function App() {
             transition={{ duration: 0.4, ease: "easeInOut" }}
           >
             <ErrorBoundary key={currentPage}>
-              {renderPage()}
+              <Suspense fallback={<PageLoader />}>
+                {renderPage()}
+              </Suspense>
             </ErrorBoundary>
           </motion.div>
         </AnimatePresence>
