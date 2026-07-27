@@ -15,6 +15,7 @@ import {
 import { AnimatePresence, motion } from 'framer-motion';
 import { Project } from '../data/projects';
 import { ProjectMedia } from './ProjectMedia';
+import { trackEvent } from '../lib/analytics';
 
 interface ProjectModalProps {
   project: Project | null;
@@ -71,6 +72,7 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
         await navigator.clipboard.writeText(shareData.url);
       }
       setShareComplete(true);
+      trackEvent('project_share', { project: project.slug });
       window.setTimeout(() => setShareComplete(false), 2500);
     } catch (error) {
       if ((error as DOMException).name !== 'AbortError') {
@@ -230,6 +232,7 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
                   href={project.github}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackEvent('project_source_click', { project: project.slug })}
                   className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-black font-bold hover:bg-cyan-300 transition-colors"
                 >
                   <Github aria-hidden="true" className="w-5 h-5" />
@@ -241,6 +244,7 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
                     href={project.demo}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => trackEvent('project_demo_click', { project: project.slug })}
                     className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-purple-600 text-white font-bold shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 transition-shadow"
                   >
                     <ExternalLink aria-hidden="true" className="w-5 h-5" />

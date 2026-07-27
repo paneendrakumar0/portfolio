@@ -177,7 +177,7 @@ export function Achievements() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white pt-24 pb-20 overflow-x-hidden selection:bg-purple-500/30">
+    <div id="achievements-timeline" className="min-h-screen bg-[#0a0a0a] text-white pt-24 pb-20 overflow-x-hidden selection:bg-purple-500/30">
       
       <TemporalScrubber years={years} activeYear={activeYear} isGlobalBlur={hoveredItem !== null} />
 

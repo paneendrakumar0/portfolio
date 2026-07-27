@@ -2,6 +2,9 @@ import React, { useCallback, useEffect, useState, Suspense, lazy } from 'react';
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import { Navigation } from './components/Navigation';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { AIChatWidget } from './components/AIChatWidget';
+import { GuidedExperience } from './components/GuidedExperience';
+import { initializeAnalytics, trackPageView } from './lib/analytics';
 
 // Lazy load section components for performance and smaller initial bundle size
 const Home = lazy(() => import('./components/Home').then(m => ({ default: m.Home })));
@@ -40,6 +43,9 @@ const PageLoader = () => (
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState(() => pageFromPath(window.location.pathname));
+  const [isTourActive, setIsTourActive] = useState(false);
+
+  useEffect(() => initializeAnalytics(), []);
 
   const navigate = useCallback((page: string) => {
     const nextPage = PAGE_PATHS[page] ? page : 'Home';
@@ -73,6 +79,7 @@ export default function App() {
           ? 'Explore Paneendra Kumar’s interactive portfolio spanning robotics, AI, machine learning, IoT, and software engineering.'
           : `Explore Paneendra Kumar’s ${currentPage.toLowerCase()} in robotics, AI, machine learning, IoT, and engineering.`,
       );
+    trackPageView(currentPage, `${window.location.pathname}${window.location.search}`);
   }, [currentPage]);
 
   const renderPage = () => {
@@ -102,7 +109,13 @@ export default function App() {
           Skip to main content
         </a>
         {/* 1. Navigation stays visible across all pages */}
-        <Navigation currentPage={currentPage} onNavigate={navigate} />
+        <Navigation
+          currentPage={currentPage}
+          onNavigate={navigate}
+          isTourActive={isTourActive}
+          onToggleTour={() => setIsTourActive((current) => !current)}
+          onStopTour={() => setIsTourActive(false)}
+        />
 
         {/* 2. Main Content Area */}
         <main id="main-content" tabIndex={-1} className="relative z-10 pt-20 outline-none">
@@ -123,6 +136,11 @@ export default function App() {
             </motion.div>
           </AnimatePresence>
         </main>
+
+        <AIChatWidget currentPage={currentPage} onNavigate={navigate} />
+        {isTourActive && (
+          <GuidedExperience onNavigate={navigate} onClose={() => setIsTourActive(false)} />
+        )}
 
         {/* 4. Background Effects Layer (Static) */}
         <div aria-hidden="true" className="fixed inset-0 pointer-events-none z-0">

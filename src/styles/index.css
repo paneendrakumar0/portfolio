@@ -21,6 +21,18 @@ body {
     radial-gradient(circle at 80% 75%, rgba(168, 85, 247, 0.08) 0, transparent 36%);
 }
 
+.portfolio-tour-highlight {
+  position: relative;
+  z-index: 35;
+  border-radius: 1.5rem;
+  outline: 2px solid rgba(34, 211, 238, 0.75);
+  outline-offset: 8px;
+  box-shadow:
+    0 0 0 9999px rgba(0, 0, 0, 0.28),
+    0 0 45px rgba(34, 211, 238, 0.25);
+  transition: outline-color 200ms ease, box-shadow 200ms ease;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

@@ -5,7 +5,6 @@ import {
   Crosshair, Trophy, Code, Award, Sparkles, Command
 } from 'lucide-react';
 import { FloatingSkills } from '../components/FloatingSkills'; 
-import { AIChatWidget } from '../components/AIChatWidget'; 
 import { useEnhancedEffects } from '../hooks/useEnhancedEffects';
 import { RecruiterSnapshot } from './RecruiterSnapshot';
 import { FeaturedWork } from './FeaturedWork';
@@ -184,7 +183,7 @@ export function Home({ onNavigate }: HomeProps) {
       <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 pt-24 md:pt-32 pb-12 md:pb-24">
         
         {/* --- HERO SECTION --- */}
-        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-24 mb-10 lg:mb-20">
+        <div id="home-hero" className="flex flex-col lg:flex-row items-center gap-12 lg:gap-24 mb-10 lg:mb-20">
           <div className="w-full lg:w-1/2 space-y-8 md:space-y-10 text-center lg:text-left order-1 lg:order-1">
             
             <div className="space-y-4 md:space-y-6">
@@ -300,8 +299,6 @@ export function Home({ onNavigate }: HomeProps) {
           </div>
         </div>
       </div>
-      
-      <AIChatWidget />
     </motion.div>
   );
 }

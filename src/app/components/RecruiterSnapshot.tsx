@@ -9,6 +9,7 @@ import {
   MapPin,
   Radar,
 } from 'lucide-react';
+import { trackEvent } from '../lib/analytics';
 
 interface RecruiterSnapshotProps {
   onNavigate: (page: string) => void;
@@ -25,7 +26,7 @@ const strengths = [
 
 export function RecruiterSnapshot({ onNavigate }: RecruiterSnapshotProps) {
   return (
-    <section aria-labelledby="recruiter-snapshot-title" className="py-16 md:py-20 border-t border-white/5">
+    <section id="recruiter-snapshot" aria-labelledby="recruiter-snapshot-title" className="py-16 md:py-20 border-t border-white/5">
       <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-transparent overflow-hidden">
         <div className="grid lg:grid-cols-[1.15fr_0.85fr]">
           <div className="p-6 md:p-10 lg:p-12">
@@ -72,7 +73,10 @@ export function RecruiterSnapshot({ onNavigate }: RecruiterSnapshotProps) {
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 type="button"
-                onClick={() => onNavigate('Contact')}
+                onClick={() => {
+                  trackEvent('external_profile_click', { destination: 'contact', source: 'recruiter_snapshot' });
+                  onNavigate('Contact');
+                }}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-black hover:bg-cyan-300 transition-colors"
               >
                 Discuss an opportunity
@@ -82,6 +86,7 @@ export function RecruiterSnapshot({ onNavigate }: RecruiterSnapshotProps) {
                 href="/resume.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackEvent('resume_open', { source: 'recruiter_snapshot' })}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-white hover:bg-white/10 transition-colors"
               >
                 <Download aria-hidden="true" className="w-4 h-4" />
@@ -91,6 +96,7 @@ export function RecruiterSnapshot({ onNavigate }: RecruiterSnapshotProps) {
                 href="https://github.com/paneendrakumar0"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackEvent('external_profile_click', { destination: 'github', source: 'recruiter_snapshot' })}
                 className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-gray-400 hover:text-white transition-colors"
               >
                 GitHub

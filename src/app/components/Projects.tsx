@@ -9,6 +9,7 @@ import {
   ProjectCategory,
   ProjectDiscipline,
 } from '../data/projects';
+import { trackEvent } from '../lib/analytics';
 
 const MissionControl = lazy(() => import('./MissionControl'));
 
@@ -51,6 +52,11 @@ export function Projects() {
     url.searchParams.set('project', project.slug);
     window.history.replaceState(window.history.state, '', url);
     setSelectedProject(project);
+    trackEvent('project_open', {
+      project: project.slug,
+      discipline: project.discipline,
+      source: is3DMode ? 'immersive' : 'grid',
+    });
   };
 
   const closeProject = () => {
@@ -67,7 +73,7 @@ export function Projects() {
   };
 
   return (
-    <div className="relative bg-black min-h-screen font-sans selection:bg-cyan-500/30">
+    <div id="project-archive" className="relative bg-black min-h-screen font-sans selection:bg-cyan-500/30">
       <div className="fixed top-24 right-4 md:right-8 z-40 flex items-center gap-3 bg-black/80 backdrop-blur-md p-2 pl-4 rounded-full border border-white/10 shadow-2xl">
         <span className={`text-[10px] font-bold tracking-widest ${!is3DMode ? 'text-white' : 'text-gray-500'}`}>
           LITE
@@ -75,7 +81,12 @@ export function Projects() {
 
         <button
           type="button"
-          onClick={() => setIs3DMode((current) => !current)}
+          onClick={() =>
+            setIs3DMode((current) => {
+              trackEvent('project_mode_change', { mode: current ? 'grid' : 'immersive' });
+              return !current;
+            })
+          }
           aria-label={is3DMode ? 'Switch to accessible project grid' : 'Switch to immersive 3D project view'}
           aria-pressed={is3DMode}
           className="relative group flex items-center justify-center rounded-full focus-visible:outline-offset-4"

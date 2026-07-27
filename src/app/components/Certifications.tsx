@@ -329,7 +329,7 @@ export function Certifications() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#000000] text-white relative">
+    <div id="certifications-library" className="min-h-screen bg-[#000000] text-white relative">
         
         {/* --- GRID MODE UI --- */}
         <AnimatePresence>

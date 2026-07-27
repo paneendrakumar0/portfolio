@@ -2,6 +2,7 @@ import React, { ChangeEvent, FormEvent, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import emailjs from '@emailjs/browser';
 import { Mail, MapPin, Send, CheckCircle, Copy, Linkedin, Github, Twitter, Instagram, MessageSquare, Download, Briefcase, Code2, Award, Trophy, ArrowRight, Zap } from 'lucide-react';
+import { trackEvent } from '../lib/analytics';
 
 const CONTACT_EMAIL = 'paneendra100@gmail.com';
 const EMAILJS_CONFIG = {
@@ -85,6 +86,7 @@ export function Contact() {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormError('');
+    trackEvent('contact_attempt', { inquiry: formData.inquiry });
 
     if (formData.company) {
       setIsSent(true);
@@ -137,10 +139,12 @@ export function Contact() {
       localStorage.setItem('portfolio-contact-submitted-at', String(Date.now()));
       setIsSent(true);
       setFormData(EMPTY_FORM);
+      trackEvent('contact_success', { inquiry: formData.inquiry });
 
     } catch (error: unknown) {
       console.error('EMAILJS ERROR:', error); 
       setFormError(`The message could not be sent. Please email me directly at ${CONTACT_EMAIL}.`);
+      trackEvent('contact_failure', { reason: 'provider_error' });
     } finally {
       setIsSubmitting(false);
     }
@@ -155,6 +159,7 @@ export function Contact() {
     try {
       await navigator.clipboard.writeText(CONTACT_EMAIL);
       setCopied(true);
+      trackEvent('email_copy', { source: 'contact_page' });
       setTimeout(() => setCopied(false), 2000);
     } catch {
       window.location.href = `mailto:${CONTACT_EMAIL}`;
@@ -177,7 +182,7 @@ export function Contact() {
   ];
 
   return (
-    <div className="min-h-screen pt-24 pb-12 px-6 flex items-center justify-center bg-[#0a0a0a] overflow-hidden relative">
+    <div id="contact-hub" className="min-h-screen pt-24 pb-12 px-6 flex items-center justify-center bg-[#0a0a0a] overflow-hidden relative">
       
       {/* Background Decor */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
@@ -393,6 +398,7 @@ export function Contact() {
                     href={social.url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => trackEvent('external_profile_click', { destination: social.name.toLowerCase(), source: 'contact_page' })}
                     whileHover={{ x: 8 }}
                     className={`flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r ${social.gradient} shadow-md ${social.shadow} transition-all group`}
                   >
@@ -413,6 +419,7 @@ export function Contact() {
               // REMOVED target="_blank" to allow direct download
               // ADDED download attribute
               download="Paneendra_Resume.pdf"
+              onClick={() => trackEvent('resume_open', { source: 'contact_page' })}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="group relative flex-1 min-h-[180px] rounded-2xl p-[2px] overflow-hidden cursor-pointer"

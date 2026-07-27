@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowRight, Github } from 'lucide-react';
 import { PROJECTS_DATA } from '../data/projects';
 import { ProjectMedia } from './ProjectMedia';
+import { trackEvent } from '../lib/analytics';
 
 interface FeaturedWorkProps {
   onNavigate: (page: string) => void;
@@ -14,11 +15,12 @@ export function FeaturedWork({ onNavigate }: FeaturedWorkProps) {
     const url = new URL('/projects', window.location.origin);
     url.searchParams.set('project', slug);
     window.history.pushState({ page: 'Projects' }, '', url);
+    trackEvent('project_open', { project: slug, source: 'featured_work' });
     onNavigate('Projects');
   };
 
   return (
-    <section aria-labelledby="featured-work-title" className="py-16 md:py-20 border-t border-white/5">
+    <section id="featured-work" aria-labelledby="featured-work-title" className="py-16 md:py-20 border-t border-white/5">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-8">
         <div>
           <p className="text-xs font-mono uppercase tracking-[0.2em] text-cyan-400 mb-3">Selected evidence</p>
