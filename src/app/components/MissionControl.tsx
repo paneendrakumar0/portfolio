@@ -115,16 +115,17 @@ function Experience({ projects, mode, isRearView, onOpenModal }: any) {
       state.camera.lookAt(0, 0, 0);
     } 
     else if (mode === 'fly') {
+      const camera = state.camera as THREE.PerspectiveCamera;
       const depth = 5 - (scroll.offset * (isMobile ? 350 : 250)); 
       const steerX = pointer.x * (isMobile ? 10 : 15); 
       const steerY = pointer.y * (isMobile ? 6 : 8);
       const targetPos = new THREE.Vector3(steerX, steerY, depth);
-      state.camera.fov = THREE.MathUtils.lerp(state.camera.fov, isMobile ? 95 : 85, delta); 
-      state.camera.updateProjectionMatrix();
-      state.camera.position.lerp(targetPos, delta * 3);
+      camera.fov = THREE.MathUtils.lerp(camera.fov, isMobile ? 95 : 85, delta);
+      camera.updateProjectionMatrix();
+      camera.position.lerp(targetPos, delta * 3);
       const lookZ = isRearView ? depth + 50 : depth - 50;
       lookTarget.current.lerp(new THREE.Vector3(steerX * 0.8, steerY * 0.8, lookZ), delta * 3);
-      state.camera.lookAt(lookTarget.current);
+      camera.lookAt(lookTarget.current);
     }
   });
 

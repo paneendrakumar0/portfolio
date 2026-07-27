@@ -14,11 +14,16 @@ function DroneModel({ springX, springY }: { springX: any, springY: any }) {
     const found: THREE.Object3D[] = [];
     scene.traverse((node) => {
       // 1. FIX WHITE TEXTURES: Ensure materials react to light
-      if ((node as THREE.Mesh).isMesh) {
-        const material = node.material as THREE.MeshStandardMaterial;
-        material.roughness = 0.3;
-        material.metalness = 0.7;
-        node.castShadow = true;
+      const meshNode = node as THREE.Mesh;
+      if (meshNode.isMesh) {
+        const materials = Array.isArray(meshNode.material) ? meshNode.material : [meshNode.material];
+        materials.forEach((material) => {
+          if (material instanceof THREE.MeshStandardMaterial) {
+            material.roughness = 0.3;
+            material.metalness = 0.7;
+          }
+        });
+        meshNode.castShadow = true;
       }
 
       // 2. MAVIC NAMING: DJI models usually use "propeller"

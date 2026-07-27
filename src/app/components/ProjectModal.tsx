@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, Github, ExternalLink, Tag, Layers } from 'lucide-react'; // Added Layers icon
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -22,16 +22,35 @@ interface ProjectModalProps {
 }
 
 export function ProjectModal({ project, onClose }: ProjectModalProps) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
     if (project) {
       document.body.style.overflow = 'hidden';
+      closeButtonRef.current?.focus();
     } else {
       document.body.style.overflow = 'unset';
     }
-    return () => { document.body.style.overflow = 'unset'; };
+    return () => {
+      document.body.style.overflow = 'unset';
+      previouslyFocused?.focus();
+    };
   }, [project]);
 
+  useEffect(() => {
+    if (!project) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose, project]);
+
   if (!project) return null;
+  const hasProjectLink = project.github !== '#' || project.demo !== '#';
 
   return (
     <AnimatePresence>
@@ -41,6 +60,7 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"
         onClick={onClose}
+        role="presentation"
       >
         <motion.div
           layoutId={`project-${project.id}`}
@@ -50,10 +70,17 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           className="relative bg-[#0a0a0a] border border-white/10 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl shadow-purple-500/10 no-scrollbar"
           onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="project-modal-title"
+          aria-describedby="project-modal-description"
         >
           {/* Close Button */}
           <button
+            ref={closeButtonRef}
+            type="button"
             onClick={onClose}
+            aria-label="Close project details"
             className="absolute top-4 right-4 z-50 p-2 rounded-full bg-black/50 backdrop-blur-md border border-white/10 hover:bg-white/20 transition-all group"
           >
             <X className="w-5 h-5 text-gray-400 group-hover:text-white" />
@@ -89,6 +116,7 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
               {/* Title & Short Desc */}
               <div>
                 <motion.h2 
+                  id="project-modal-title"
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.1 }}
@@ -96,7 +124,7 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
                 >
                   {project.title}
                 </motion.h2>
-                <p className="text-gray-400 text-lg">{project.description}</p>
+                <p id="project-modal-description" className="text-gray-400 text-lg">{project.description}</p>
               </div>
 
               <div className="h-px w-full bg-white/10" />
@@ -186,6 +214,11 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
                         <ExternalLink className="w-5 h-5 group-hover:-translate-y-1 group-hover:translate-x-1 transition-transform" />
                         Live Demo
                       </a>
+                    )}
+                    {!hasProjectLink && (
+                      <p className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center text-sm text-gray-400">
+                        Source code and demo are being prepared.
+                      </p>
                     )}
                   </motion.div>
                 </div>

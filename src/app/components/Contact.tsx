@@ -1,7 +1,31 @@
-import React, { useState } from 'react';
+import React, { ChangeEvent, FormEvent, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import emailjs from '@emailjs/browser';
 import { Mail, MapPin, Send, CheckCircle, Copy, Linkedin, Github, Twitter, Instagram, MessageSquare, Download, Briefcase, Code2, Award, Trophy, ArrowRight, Zap } from 'lucide-react';
+
+const CONTACT_EMAIL = 'paneendra100@gmail.com';
+const EMAILJS_CONFIG = {
+  serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID,
+  templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+  publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
+};
+const SUBMISSION_COOLDOWN_MS = 60_000;
+
+type ContactFormData = {
+  name: string;
+  email: string;
+  inquiry: string;
+  message: string;
+  company: string;
+};
+
+const EMPTY_FORM: ContactFormData = {
+  name: '',
+  email: '',
+  inquiry: 'Collaboration',
+  message: '',
+  company: '',
+};
 
 // --- ANIMATION VARIANTS (FUTURISTIC) ---
 const containerVariants = {
@@ -51,51 +75,90 @@ const TiltCard = ({ children, className = "" }: any) => {
 };
 
 export function Contact() {
-  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [formData, setFormData] = useState<ContactFormData>(EMPTY_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSent, setIsSent] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [formError, setFormError] = useState('');
 
   // --- EMAILJS INTEGRATION ---
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setFormError('');
+
+    if (formData.company) {
+      setIsSent(true);
+      return;
+    }
+
+    const normalizedEmail = formData.email.trim();
+    if (formData.name.trim().length < 2) {
+      setFormError('Please enter your full name.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setFormError('Please enter a valid email address.');
+      return;
+    }
+    if (formData.message.trim().length < 20) {
+      setFormError('Please include at least 20 characters so I can understand your request.');
+      return;
+    }
+
+    const lastSubmission = Number(localStorage.getItem('portfolio-contact-submitted-at') ?? 0);
+    if (Date.now() - lastSubmission < SUBMISSION_COOLDOWN_MS) {
+      setFormError('Your previous message was just sent. Please wait a minute before sending another.');
+      return;
+    }
+
+    if (!EMAILJS_CONFIG.serviceId || !EMAILJS_CONFIG.templateId || !EMAILJS_CONFIG.publicKey) {
+      setFormError(`The contact service is temporarily unavailable. Please email me directly at ${CONTACT_EMAIL}.`);
+      return;
+    }
+
     setIsSubmitting(true);
 
-    const serviceId = 'service_neavl3n';
-    const templateId = 'template_mxq9h6y';
-    const publicKey = 'rD9JvrGqyzqY_tAAM';
-
     const templateParams = {
-      from_name: formData.name,
-      from_email: formData.email,
-      message: formData.message,
+      from_name: formData.name.trim(),
+      from_email: normalizedEmail,
+      inquiry_type: formData.inquiry,
+      message: formData.message.trim(),
       to_name: 'Paneendra', 
     };
 
     try {
-      await emailjs.send(serviceId, templateId, templateParams, publicKey);
+      await emailjs.send(
+        EMAILJS_CONFIG.serviceId,
+        EMAILJS_CONFIG.templateId,
+        templateParams,
+        EMAILJS_CONFIG.publicKey,
+      );
       
-      // Success
+      localStorage.setItem('portfolio-contact-submitted-at', String(Date.now()));
       setIsSent(true);
-      setFormData({ name: '', email: '', message: '' });
-      setTimeout(() => setIsSent(false), 5000); 
+      setFormData(EMPTY_FORM);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('EMAILJS ERROR:', error); 
-      alert(`Failed to send: ${error.text || "Check console (F12) for details"}. \n\nTip: Disable AdBlocker if active.`);
+      setFormError(`The message could not be sent. Please email me directly at ${CONTACT_EMAIL}.`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleChange = (e: any) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormError('');
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const copyEmail = () => {
-    navigator.clipboard.writeText('paneendra100@gmail.com');
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const copyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(CONTACT_EMAIL);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      window.location.href = `mailto:${CONTACT_EMAIL}`;
+    }
   };
 
   const socialLinks = [
@@ -120,8 +183,7 @@ export function Contact() {
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl opacity-20"></div>
         <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl opacity-20"></div>
-        {/* New Grid Texture */}
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10"></div>
+        <div className="absolute inset-0 portfolio-noise opacity-40"></div>
       </div>
 
       <div className="max-w-7xl w-full relative z-10">
@@ -166,7 +228,7 @@ export function Contact() {
                     
                     <div className="grid md:grid-cols-2 gap-4 mb-4">
                         {/* Email Card */}
-                        <div className="group p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors cursor-pointer flex flex-col justify-center" onClick={copyEmail}>
+                        <button type="button" className="group text-left p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors cursor-pointer flex flex-col justify-center" onClick={copyEmail} aria-label="Copy email address">
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
                                 <Mail className="w-4 h-4 text-cyan-400" />
@@ -174,10 +236,11 @@ export function Contact() {
                                 <span className="text-gray-400 text-sm">Email</span>
                             </div>
                             <div className="text-gray-200 font-mono text-sm flex items-center gap-2">
-                                paneendra100@gmail.com
+                                {CONTACT_EMAIL}
                                 {copied ? <CheckCircle className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3 text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity" />}
                             </div>
-                        </div>
+                            <span className="sr-only" aria-live="polite">{copied ? 'Email copied' : ''}</span>
+                        </button>
 
                         {/* Location Text Card */}
                         <div className="p-4 rounded-xl bg-white/5 border border-white/5 flex flex-col justify-center">
@@ -202,6 +265,7 @@ export function Contact() {
                         <div className="absolute inset-0 bg-gray-800 transition-transform duration-700 group-hover:scale-110">
                              {/* Static Map Image or Iframe */}
                              <iframe 
+                                title="Map showing National Institute of Technology Durgapur"
                                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3658.1309320299696!2d87.29085867605432!3d23.527785478822393!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f772081cede5e9%3A0x33fb9ccb243dfa5!2sNational%20Institute%20of%20Technology%20Durgapur!5e0!3m2!1sen!2sin!4v1709234567890!5m2!1sen!2sin" 
                                 className="w-full h-full opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500 pointer-events-none"
                                 loading="lazy"
@@ -232,6 +296,7 @@ export function Contact() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onSubmit={handleSubmit} 
+                            noValidate
                             className="space-y-5"
                             >
                             <h3 className="text-xl font-bold text-white flex items-center gap-2">
@@ -240,25 +305,53 @@ export function Contact() {
                             
                             <div className="grid md:grid-cols-2 gap-5">
                                 <div className="space-y-2">
-                                <label className="text-sm text-gray-400 ml-1">Name</label>
-                                <input type="text" name="name" value={formData.name} onChange={handleChange} required
+                                <label htmlFor="contact-name" className="text-sm text-gray-400 ml-1">Name</label>
+                                <input id="contact-name" type="text" name="name" value={formData.name} onChange={handleChange} required minLength={2} maxLength={80} autoComplete="name"
                                     className="w-full bg-black/50 border border-gray-700 rounded-lg px-4 py-3 text-white outline-none focus:border-cyan-500 transition-colors" />
                                 </div>
                                 <div className="space-y-2">
-                                <label className="text-sm text-gray-400 ml-1">Email</label>
-                                <input type="email" name="email" value={formData.email} onChange={handleChange} required
+                                <label htmlFor="contact-email" className="text-sm text-gray-400 ml-1">Email</label>
+                                <input id="contact-email" type="email" name="email" value={formData.email} onChange={handleChange} required maxLength={120} autoComplete="email" inputMode="email"
                                     className="w-full bg-black/50 border border-gray-700 rounded-lg px-4 py-3 text-white outline-none focus:border-cyan-500 transition-colors" />
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm text-gray-400 ml-1">Message</label>
-                                <textarea name="message" value={formData.message} onChange={handleChange} required rows={4}
+                                <label htmlFor="contact-inquiry" className="text-sm text-gray-400 ml-1">Inquiry type</label>
+                                <select id="contact-inquiry" name="inquiry" value={formData.inquiry} onChange={handleChange}
+                                    className="w-full bg-black/50 border border-gray-700 rounded-lg px-4 py-3 text-white outline-none focus:border-cyan-500 transition-colors">
+                                  <option>Collaboration</option>
+                                  <option>Internship</option>
+                                  <option>Freelance project</option>
+                                  <option>General question</option>
+                                </select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between gap-3">
+                                  <label htmlFor="contact-message" className="text-sm text-gray-400 ml-1">Message</label>
+                                  <span id="message-count" className="text-xs text-gray-600">{formData.message.length}/2000</span>
+                                </div>
+                                <textarea id="contact-message" name="message" value={formData.message} onChange={handleChange} required minLength={20} maxLength={2000} rows={5} aria-describedby="message-count"
                                     className="w-full bg-black/50 border border-gray-700 rounded-lg px-4 py-3 text-white outline-none focus:border-cyan-500 transition-colors resize-none" />
                             </div>
 
+                            <div className="absolute -left-[10000px]" aria-hidden="true">
+                              <label htmlFor="contact-company">Company website</label>
+                              <input id="contact-company" type="text" name="company" value={formData.company} onChange={handleChange} tabIndex={-1} autoComplete="off" />
+                            </div>
+
+                            {formError && (
+                              <div role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                                {formError}{' '}
+                                <a href={`mailto:${CONTACT_EMAIL}`} className="font-bold underline underline-offset-2">
+                                  Email directly
+                                </a>
+                              </div>
+                            )}
+
                             <button type="submit" disabled={isSubmitting}
-                                className="w-full py-4 bg-gradient-to-r from-cyan-600 to-purple-600 rounded-lg font-bold text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2">
+                                className="w-full py-4 bg-gradient-to-r from-cyan-600 to-purple-600 rounded-lg font-bold text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:cursor-wait disabled:opacity-60">
                                 {isSubmitting ? (
                                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                 ) : (
@@ -269,12 +362,12 @@ export function Contact() {
                             </button>
                             </motion.form>
                         ) : (
-                            <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center text-center h-[300px]">
+                            <motion.div key="success" role="status" aria-live="polite" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center text-center h-[300px]">
                             <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mb-4">
                                 <CheckCircle className="w-8 h-8 text-green-500" />
                             </div>
                             <h3 className="text-2xl font-bold text-white mb-2">Message Sent!</h3>
-                            <button onClick={() => setIsSent(false)} className="mt-6 text-gray-400 hover:text-white text-sm underline">Send another</button>
+                            <button type="button" onClick={() => setIsSent(false)} className="mt-6 text-gray-400 hover:text-white text-sm underline">Send another</button>
                             </motion.div>
                         )}
                         </AnimatePresence>

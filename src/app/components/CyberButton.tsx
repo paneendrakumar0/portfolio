@@ -18,7 +18,7 @@ export const CyberButton: React.FC<CyberButtonProps> = ({
 }) => {
   const [displayText, setDisplayText] = useState(text);
   const [isHovered, setIsHovered] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   // --- MAGNETIC EFFECT STATE ---
@@ -27,7 +27,7 @@ export const CyberButton: React.FC<CyberButtonProps> = ({
   // --- TEXT SCRAMBLE LOGIC ---
   const scramble = () => {
     let iteration = 0;
-    clearInterval(intervalRef.current as NodeJS.Timeout);
+    if (intervalRef.current) clearInterval(intervalRef.current);
 
     intervalRef.current = setInterval(() => {
       setDisplayText((prev) =>
@@ -43,16 +43,22 @@ export const CyberButton: React.FC<CyberButtonProps> = ({
       );
 
       if (iteration >= text.length) {
-        clearInterval(intervalRef.current as NodeJS.Timeout);
+        if (intervalRef.current) clearInterval(intervalRef.current);
       }
       iteration += 1 / 3; // Speed of decoding
     }, 30);
   };
 
   const stopScramble = () => {
-    clearInterval(intervalRef.current as NodeJS.Timeout);
+    if (intervalRef.current) clearInterval(intervalRef.current);
     setDisplayText(text);
   };
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
 
   // --- MOUSE MOVEMENT LOGIC (MAGNETIC + GLOW) ---
   const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {

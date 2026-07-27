@@ -1,13 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowRight, Code2, Bot, Popcorn, RefreshCw, 
   Crosshair, Trophy, Code, Award, Sparkles, Command
 } from 'lucide-react';
 import { FloatingSkills } from '../components/FloatingSkills'; 
-import { ExpressiveRobot } from '../components/ExpressiveRobot';
-import { DroneFollower } from '../components/DroneFollower';
 import { AIChatWidget } from '../components/AIChatWidget'; 
+import { useEnhancedEffects } from '../hooks/useEnhancedEffects';
+
+const ExpressiveRobot = lazy(() =>
+  import('../components/ExpressiveRobot').then((module) => ({ default: module.ExpressiveRobot })),
+);
+const DroneFollower = lazy(() =>
+  import('../components/DroneFollower').then((module) => ({ default: module.DroneFollower })),
+);
 
 interface HomeProps {
   onNavigate: (page: string) => void;
@@ -34,6 +40,7 @@ const WarpSpeedBackground = () => {
     const stars: { x: number; y: number; z: number; color: string }[] = [];
     const numStars = 400; 
     const speed = 2; 
+    let animationFrame = 0;
 
     for (let i = 0; i < numStars; i++) {
       stars.push({
@@ -71,7 +78,7 @@ const WarpSpeedBackground = () => {
           ctx.fill();
         }
       });
-      requestAnimationFrame(animate);
+      animationFrame = requestAnimationFrame(animate);
     };
 
     const handleResize = () => {
@@ -83,10 +90,13 @@ const WarpSpeedBackground = () => {
 
     animate();
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
-  return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none opacity-40" />;
+  return <canvas ref={canvasRef} aria-hidden="true" className="fixed inset-0 z-0 pointer-events-none opacity-40" />;
 };
 
 function TypewriterText({ text, delay = 50 }: { text: string; delay?: number }) {
@@ -142,6 +152,7 @@ function CyberHUD() {
 export function Home({ onNavigate }: HomeProps) {
   const [robotState, setRobotState] = useState<RobotEmotion>('Sitting');
   const [showSpeechBubble, setShowSpeechBubble] = useState(false);
+  const enhancedEffects = useEnhancedEffects();
 
   useEffect(() => {
     const timer = setTimeout(() => { setRobotState('Wave'); setShowSpeechBubble(true); }, 1500);
@@ -155,14 +166,18 @@ export function Home({ onNavigate }: HomeProps) {
       animate={{ opacity: 1 }}
       className="min-h-screen bg-[#0a0a0a] text-white relative overflow-x-hidden selection:bg-cyan-500/30"
     >
-      <WarpSpeedBackground />
+      {enhancedEffects && <WarpSpeedBackground />}
       
       {/* --- RESTORED DRONE --- */}
-      <div className="fixed inset-0 pointer-events-none z-10 hidden md:block">
-        <DroneFollower />
-      </div>
+      {enhancedEffects && (
+        <div aria-hidden="true" className="fixed inset-0 pointer-events-none z-10 hidden md:block">
+          <Suspense fallback={null}>
+            <DroneFollower />
+          </Suspense>
+        </div>
+      )}
 
-      <CyberHUD />
+      {enhancedEffects && <CyberHUD />}
 
       <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 pt-24 md:pt-32 pb-12 md:pb-24">
         
@@ -226,12 +241,25 @@ export function Home({ onNavigate }: HomeProps) {
               <div className="absolute inset-0 bg-cyan-500/10 rounded-full blur-3xl scale-75 animate-pulse"></div>
               
               <div className="relative h-full w-full rounded-[2rem] overflow-hidden border border-white/5 bg-black/20 backdrop-blur-sm shadow-2xl">
-                <ExpressiveRobot action={robotState} />
+                {enhancedEffects ? (
+                  <Suspense fallback={<RobotFallback />}>
+                    <ExpressiveRobot action={robotState} />
+                  </Suspense>
+                ) : (
+                  <RobotFallback />
+                )}
               </div>
 
-              <button onClick={() => setRobotState('Dance')} className="absolute -bottom-4 -left-4 w-14 h-14 bg-[#111] border border-cyan-500/20 rounded-xl flex items-center justify-center hover:scale-110 transition-all hover:border-cyan-500/50">
-                <Bot className="w-6 h-6 text-cyan-500" />
-              </button>
+              {enhancedEffects && (
+                <button
+                  type="button"
+                  aria-label="Make the robot dance"
+                  onClick={() => setRobotState('Dance')}
+                  className="absolute -bottom-4 -left-4 w-14 h-14 bg-[#111] border border-cyan-500/20 rounded-xl flex items-center justify-center hover:scale-110 transition-all hover:border-cyan-500/50"
+                >
+                  <Bot aria-hidden="true" className="w-6 h-6 text-cyan-500" />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -269,6 +297,17 @@ export function Home({ onNavigate }: HomeProps) {
       
       <AIChatWidget />
     </motion.div>
+  );
+}
+
+function RobotFallback() {
+  return (
+    <div className="h-full min-h-[280px] flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-cyan-500/10 via-transparent to-purple-500/10">
+      <Bot aria-hidden="true" className="w-24 h-24 text-cyan-400/70" />
+      <p className="text-xs font-mono uppercase tracking-[0.25em] text-gray-500">
+        Lightweight mode
+      </p>
+    </div>
   );
 }
 
