@@ -7,6 +7,8 @@ import {
 import { FloatingSkills } from '../components/FloatingSkills'; 
 import { AIChatWidget } from '../components/AIChatWidget'; 
 import { useEnhancedEffects } from '../hooks/useEnhancedEffects';
+import { RecruiterSnapshot } from './RecruiterSnapshot';
+import { FeaturedWork } from './FeaturedWork';
 
 const ExpressiveRobot = lazy(() =>
   import('../components/ExpressiveRobot').then((module) => ({ default: module.ExpressiveRobot })),
@@ -263,6 +265,10 @@ export function Home({ onNavigate }: HomeProps) {
             </div>
           </div>
         </div>
+
+        <RecruiterSnapshot onNavigate={onNavigate} />
+
+        <FeaturedWork onNavigate={onNavigate} />
 
         {/* --- FLOATING SKILLS SECTION (Fixed Overflow) --- */}
         <div className="py-16 border-t border-white/5 relative z-20">

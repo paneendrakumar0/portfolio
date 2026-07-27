@@ -4,8 +4,7 @@ import { Image, Text, useScroll, ScrollControls, Environment, Stars, Sparkles, u
 import * as THREE from 'three';
 import { Terminal, Rocket, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-// We import the Project type to ensure type safety
-import { Project } from './Projects'; 
+import { Project } from '../data/projects';
 
 // --- LOADING COMPONENT ---
 function CanvasLoader() {
