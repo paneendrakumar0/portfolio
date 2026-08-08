@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import {
   ArrowUpRight,
@@ -231,7 +231,7 @@ function ProjectCard({ project, theme, onClick }: ProjectCardProps) {
   const ref = useRef<HTMLButtonElement>(null);
   
   // Hover state for glow effect
-  const [isHovered, setIsHovered] = useState(false);
+  // Removed unused isHovered state
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
@@ -265,7 +265,6 @@ function ProjectCard({ project, theme, onClick }: ProjectCardProps) {
   };
 
   const handleMouseLeave = () => {
-    setIsHovered(false);
     x.set(0);
     y.set(0);
   };
@@ -282,7 +281,6 @@ function ProjectCard({ project, theme, onClick }: ProjectCardProps) {
       type="button"
       onClick={onClick}
       onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={handleMouseLeave}
       style={{
         rotateX,
