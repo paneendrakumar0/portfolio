@@ -4,6 +4,7 @@ import { Navigation } from './components/Navigation';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AIChatWidget } from './components/AIChatWidget';
 import { GuidedExperience } from './components/GuidedExperience';
+import { CustomCursor } from './components/CustomCursor';
 import { initializeAnalytics, trackPageView } from './lib/analytics';
 
 // Lazy load section components for performance and smaller initial bundle size
@@ -102,6 +103,7 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="min-h-screen bg-black text-white selection:bg-cyan-500/30">
+        <CustomCursor />
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only fixed top-3 left-3 z-[200] rounded-lg bg-cyan-400 px-4 py-2 font-bold text-black"
@@ -122,11 +124,10 @@ export default function App() {
           <AnimatePresence mode="wait">
             <motion.div
               key={currentPage}
-              // 3. Removed 'y' axis movement to stop side/bottom entry effect
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.4, ease: "easeInOut" }}
+              initial={{ opacity: 0, scale: 0.98, filter: 'blur(10px)' }}
+              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, scale: 1.02, filter: 'blur(10px)' }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             >
               <ErrorBoundary key={currentPage}>
                 <Suspense fallback={<PageLoader />}>
