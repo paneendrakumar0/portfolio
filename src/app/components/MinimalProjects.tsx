@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import {
   ArrowUpRight,
   Code2,
@@ -224,48 +225,116 @@ interface ProjectCardProps {
 function ProjectCard({ project, theme, onClick }: ProjectCardProps) {
   const isCyan = theme === 'cyan';
   const accentColor = isCyan ? 'text-cyan-400' : 'text-amber-400';
-  const borderColor = isCyan ? 'hover:border-cyan-500/50' : 'hover:border-amber-500/50';
-  const glow = isCyan ? 'hover:shadow-[0_0_30px_-5px_rgba(34,211,238,0.15)]' : 'hover:shadow-[0_0_30px_-5px_rgba(251,191,36,0.15)]';
+  const borderColor = isCyan ? 'border-cyan-500/30' : 'border-amber-500/30';
+  const shadowColor = isCyan ? 'rgba(34,211,238,0.2)' : 'rgba(251,191,36,0.2)';
+
+  const ref = useRef<HTMLButtonElement>(null);
+  
+  // Hover state for glow effect
+  // Removed unused isHovered state
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  // 3D Tilt calculations
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const mouseXSpring = useSpring(x, { stiffness: 300, damping: 20 });
+  const mouseYSpring = useSpring(y, { stiffness: 300, damping: 20 });
+
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["10deg", "-10deg"]);
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-10deg", "10deg"]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    
+    // For Tilt
+    const width = rect.width;
+    const height = rect.height;
+    const mouseXPos = e.clientX - rect.left;
+    const mouseYPos = e.clientY - rect.top;
+    const xPct = mouseXPos / width - 0.5;
+    const yPct = mouseYPos / height - 0.5;
+    x.set(xPct);
+    y.set(yPct);
+
+    // For Glow
+    mouseX.set(e.clientX - rect.left);
+    mouseY.set(e.clientY - rect.top);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  // Combine background styles for framer-motion since it expects a string returning function
+  const background = useTransform(
+    [mouseX, mouseY],
+    ([xPos, yPos]) => `radial-gradient(600px circle at ${xPos}px ${yPos}px, ${isCyan ? 'rgba(34,211,238,0.15)' : 'rgba(251,191,36,0.15)'}, transparent 40%)`
+  );
 
   return (
-    <button
+    <motion.button
+      ref={ref}
       type="button"
       onClick={onClick}
-      aria-label={`Open case study for ${project.title}`}
-      className={`group relative w-full text-left bg-white/5 border border-white/10 rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 ${borderColor} ${glow}`}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        rotateX,
+        rotateY,
+        transformStyle: "preserve-3d",
+      }}
+      className={`group relative w-full text-left bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-visible cursor-pointer transition-colors duration-500 hover:${borderColor}`}
+      whileHover={{ 
+        scale: 1.02,
+        boxShadow: `0 20px 40px -10px ${shadowColor}`
+      }}
+      transition={{ type: "spring", stiffness: 400, damping: 30 }}
     >
-      <div className="flex flex-col sm:flex-row h-full">
+      {/* GLOW EFFECT */}
+      <motion.div
+        className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        style={{ background }}
+      />
+      
+      <div 
+        className="flex flex-col sm:flex-row h-full rounded-2xl overflow-hidden bg-white/5 backdrop-blur-md"
+        style={{ transform: "translateZ(40px)" }}
+      >
         <ProjectMedia
           src={project.image}
           alt={project.imageAlt}
           color={project.color}
-          className="w-full sm:w-40 h-40 sm:h-auto shrink-0"
-          imageClassName="group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100"
+          className="w-full sm:w-48 h-48 sm:h-auto shrink-0 relative"
+          imageClassName="group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100"
         />
 
-        <div className="p-5 flex-1 flex flex-col justify-center">
-          <div className="flex items-center gap-2 mb-2 text-[10px] font-mono uppercase tracking-widest">
+        <div className="p-6 flex-1 flex flex-col justify-center relative">
+          <div className="flex items-center gap-2 mb-3 text-[10px] font-mono uppercase tracking-widest">
             <span className={accentColor}>{project.discipline}</span>
             <span className="text-gray-700">/</span>
             <span className="text-gray-500">{project.status}</span>
           </div>
 
-          <div className="flex justify-between items-start gap-4 mb-2">
-            <h3 className="text-lg font-bold text-white">{project.title}</h3>
+          <div className="flex justify-between items-start gap-4 mb-3">
+            <h3 className="text-xl font-bold text-white group-hover:text-white transition-colors">{project.title}</h3>
             <ArrowUpRight className={`w-5 h-5 shrink-0 ${accentColor} opacity-40 group-hover:opacity-100 transition-all group-hover:translate-x-1 group-hover:-translate-y-1`} />
           </div>
 
-          <p className="text-gray-400 text-sm line-clamp-2 mb-4">{project.description}</p>
+          <p className="text-gray-400 text-sm leading-relaxed line-clamp-2 mb-5">{project.description}</p>
 
           <div className="flex flex-wrap gap-2 mt-auto">
             {project.tech.slice(0, 3).map((technology) => (
-              <span key={technology} className="px-2 py-1 text-[10px] uppercase font-mono bg-black/50 border border-white/5 rounded text-gray-400">
+              <span key={technology} className="px-2 py-1 text-[10px] uppercase font-mono bg-black/50 border border-white/5 rounded text-gray-400 shadow-sm">
                 {technology}
               </span>
             ))}
           </div>
         </div>
       </div>
-    </button>
+    </motion.button>
   );
 }

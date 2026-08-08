@@ -22,6 +22,8 @@ interface HomeProps {
 
 type RobotEmotion = 'Idle' | 'Dance' | 'Wave' | 'Jump' | 'Cry' | 'Laugh' | 'Sitting';
 
+
+
 // --- WARP SPEED BACKGROUND (Subtle & Colored) ---
 const WarpSpeedBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -188,11 +190,11 @@ export function Home({ onNavigate }: HomeProps) {
             
             <div className="space-y-4 md:space-y-6">
               <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.9]">
-                <span className="bg-gradient-to-br from-white via-white to-gray-500 bg-clip-text text-transparent">Paneendra</span>
+                <span className="text-white">Paneendra</span>
                 <br />
-                <span className="bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">Kumar</span>
+                <span className="text-cyan-400">Kumar</span>
               </h1>
-              <h2 className="text-xl sm:text-3xl md:text-4xl text-gray-400 font-light tracking-tight italic px-2">
+              <h2 className="text-xl sm:text-3xl md:text-4xl text-gray-400 font-light tracking-tight italic px-2 border-l-4 border-cyan-500/50 pl-4">
                 "Writing Code That <span className="text-white not-italic font-medium">Moves</span>"
               </h2>
             </div>
